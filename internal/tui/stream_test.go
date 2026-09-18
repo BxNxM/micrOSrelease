@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/micros/micros-release/internal/network"
+	"github.com/micros/microsctl/internal/network"
 )
 
 type gatedDiscovery struct{ release chan struct{} }

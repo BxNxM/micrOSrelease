@@ -1,8 +1,8 @@
-# micrOS Release Manager
+# microsctl
 
 > This is a PoC - not yet a fully functional installer
 
-![micrOS Release Manager TUI](media/TUI.png)
+![microsctl TUI](media/TUI.png)
 
 A Go TUI prototype for micrOS release workflows. It models USB install, USB
 update, firmware/target selection, and micrOS node discovery on TCP port 9008.
@@ -14,6 +14,19 @@ immediately and refreshes them in the background. Discovery and status refresh
 every five minutes; press `r` to refresh manually. Results stream into existing
 cards. The Nodes screen names the active background operation while it runs.
 
+## Install
+
+Run the installer from the directory where you want to place `microsctl`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/BxNxM/micrOSrelease/main/dist/install.sh | sh
+```
+
+The installer detects macOS ARM64, Linux x64, or Windows x64 (from Git Bash,
+MSYS2, or Cygwin) and downloads the matching prebuilt binary from this
+repository's `dist/` directory. On Windows, the output filename is
+`microsctl.exe`.
+
 ## Run
 
 Requires Go 1.25 or newer.
@@ -24,7 +37,7 @@ go run .
 # Optional explicit network:
 go run . --cidr 10.0.1.0/24
 # Single binary:
-go build -o micros-release .
+go build -o microsctl .
 ```
 
 Use arrow keys to navigate, `Enter` to select, `Y/N` to confirm, `</>` to
@@ -42,9 +55,9 @@ identified. Discovery does not import the Python toolkit's device cache.
 ## Storage
 
 Add build-time content to `storage/frameworks/<board>/` (firmware binaries) and
-`storage/modules/` (modules/resources). Rebuild with `go build -o micros-release .`;
+`storage/modules/` (modules/resources). Rebuild with `go build -o microsctl .`;
 Go embeds these directories recursively into the single executable. List the
-bundled files with `./micros-release --list-assets`. Symlinks and files beginning
+bundled files with `./microsctl --list-assets`. Symlinks and files beginning
 with `.` or `_` are not included.
 
 Go features can read bundled content without extracting it:
@@ -52,7 +65,7 @@ Go features can read bundled content without extracting it:
 ```go
 import (
     "io/fs"
-    assets "github.com/micros/micros-release/storage"
+    assets "github.com/micros/microsctl/storage"
 )
 
 data, err := fs.ReadFile(assets.Files(), "frameworks/micrOS-esp32.bin")
@@ -65,7 +78,7 @@ Board and version metadata comes from micrOS filenames. USB targets and
 install/update remain simulated; selecting an image does not flash hardware.
 
 Runtime data lives outside the executable in the platform user configuration
-directory under `micros-release` (macOS: `~/Library/Application Support/micros-release`).
+directory under `microsctl` (macOS: `~/Library/Application Support/microsctl`).
 Use `--data-dir ./data` for portable storage. `devices.json` stores last-known
 device observations; `firmware/` is reserved for firmware files. Passwords are
 not saved. Cards mark cached observations as **saved**; details include the last

@@ -2,7 +2,7 @@ package tui
 
 import (
 	"fmt"
-	"github.com/micros/micros-release/internal/usb"
+	"github.com/micros/microsctl/internal/usb"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"

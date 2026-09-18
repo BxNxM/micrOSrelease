@@ -3,8 +3,8 @@ package tui
 import (
 	"context"
 
-	"github.com/micros/micros-release/internal/network"
-	"github.com/micros/micros-release/internal/usb"
+	"github.com/micros/microsctl/internal/network"
+	"github.com/micros/microsctl/internal/usb"
 )
 
 type action int

@@ -5,7 +5,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"fmt"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/micros/micros-release/internal/tui/widgets"
+	"github.com/micros/microsctl/internal/tui/widgets"
 	"strings"
 )
 

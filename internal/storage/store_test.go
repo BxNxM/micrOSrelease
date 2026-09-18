@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/micros/micros-release/internal/network"
+	"github.com/micros/microsctl/internal/network"
 )
 
 func TestPersistentDevices(t *testing.T) {

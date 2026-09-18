@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/micros/micros-release/internal/network"
+	"github.com/micros/microsctl/internal/network"
 )
 
 type Store struct{ Root string }
@@ -21,7 +21,7 @@ func Open(root string) (*Store, error) {
 		if err != nil {
 			return nil, err
 		}
-		root = filepath.Join(base, "micros-release")
+		root = filepath.Join(base, "microsctl")
 	}
 	root, err := filepath.Abs(root)
 	if err != nil {

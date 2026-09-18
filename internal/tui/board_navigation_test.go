@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/micros/micros-release/internal/usb"
+	"github.com/micros/microsctl/internal/usb"
 	"testing"
 )
 

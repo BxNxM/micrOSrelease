@@ -1,6 +1,6 @@
 package tui
 
-import "github.com/micros/micros-release/internal/usb"
+import "github.com/micros/microsctl/internal/usb"
 
 func (m *model) switchBoard(direction int) {
 	boards := usb.Boards(m.inventory.Images)

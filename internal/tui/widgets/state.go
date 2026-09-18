@@ -1,8 +1,8 @@
 package widgets
 
 import (
-	"github.com/micros/micros-release/internal/network"
-	"github.com/micros/micros-release/internal/usb"
+	"github.com/micros/microsctl/internal/network"
+	"github.com/micros/microsctl/internal/usb"
 )
 
 // State is a read-only rendering snapshot. Widgets never perform I/O or update

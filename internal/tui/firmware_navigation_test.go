@@ -3,7 +3,7 @@ package tui
 import (
 	"testing"
 
-	"github.com/micros/micros-release/internal/usb"
+	"github.com/micros/microsctl/internal/usb"
 )
 
 func TestFirmwarePickerContinuesRequestedAction(t *testing.T) {

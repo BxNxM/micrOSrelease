@@ -6,8 +6,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/micros/micros-release/internal/network"
-	"github.com/micros/micros-release/internal/usb"
+	"github.com/micros/microsctl/internal/network"
+	"github.com/micros/microsctl/internal/usb"
 )
 
 type inventoryMsg struct {

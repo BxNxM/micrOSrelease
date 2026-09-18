@@ -1,4 +1,4 @@
-module github.com/micros/micros-release
+module github.com/micros/microsctl
 
 go 1.25.0
 

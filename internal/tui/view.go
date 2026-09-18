@@ -2,8 +2,8 @@ package tui
 
 import (
 	tea "charm.land/bubbletea/v2"
-	"github.com/micros/micros-release/internal/tui/views"
-	"github.com/micros/micros-release/internal/tui/widgets"
+	"github.com/micros/microsctl/internal/tui/views"
+	"github.com/micros/microsctl/internal/tui/widgets"
 )
 
 func (m model) renderState() widgets.State {

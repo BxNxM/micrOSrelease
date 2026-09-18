@@ -3,7 +3,7 @@ package widgets
 import (
 	"charm.land/lipgloss/v2"
 	"fmt"
-	"github.com/micros/micros-release/internal/usb"
+	"github.com/micros/microsctl/internal/usb"
 	"strings"
 )
 

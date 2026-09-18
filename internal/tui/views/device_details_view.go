@@ -2,7 +2,7 @@ package views
 
 import (
 	"fmt"
-	"github.com/micros/micros-release/internal/tui/widgets"
+	"github.com/micros/microsctl/internal/tui/widgets"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"

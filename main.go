@@ -10,11 +10,11 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/micros/micros-release/internal/network"
-	"github.com/micros/micros-release/internal/storage"
-	"github.com/micros/micros-release/internal/tui"
-	"github.com/micros/micros-release/internal/usb"
-	assets "github.com/micros/micros-release/storage"
+	"github.com/micros/microsctl/internal/network"
+	"github.com/micros/microsctl/internal/storage"
+	"github.com/micros/microsctl/internal/tui"
+	"github.com/micros/microsctl/internal/usb"
+	assets "github.com/micros/microsctl/storage"
 )
 
 func main() {
@@ -53,7 +53,7 @@ func main() {
 	defer cancel()
 
 	if _, err := tea.NewProgram(model, tea.WithContext(ctx)).Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "micrOS Release failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "microsctl failed: %v\n", err)
 		os.Exit(1)
 	}
 }
