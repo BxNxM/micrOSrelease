@@ -1,5 +1,9 @@
 # micrOS Release Manager
 
+> This is a PoC - not yet a fully functional installer
+
+![micrOS Release Manager TUI](media/TUI.png)
+
 A Go TUI prototype for micrOS release workflows. It models USB install, USB
 update, firmware/target selection, and micrOS node discovery on TCP port 9008.
 
