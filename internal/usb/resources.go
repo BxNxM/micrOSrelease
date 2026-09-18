@@ -92,10 +92,13 @@ func prepareResources(files fs.FS, config InstallConfig) ([]preparedResource, er
 	return prepared, nil
 }
 
-func copyResources(ctx context.Context, session replSession, resources []preparedResource) error {
-	for _, resource := range resources {
+func copyResources(ctx context.Context, session replSession, resources []preparedResource, progress func(string)) error {
+	for index, resource := range resources {
 		if err := ctx.Err(); err != nil {
 			return err
+		}
+		if progress != nil {
+			progress(fmt.Sprintf("Uploading %d/%d · %s", index+1, len(resources), resource.target))
 		}
 		if err := session.WriteFileAtomic(ctx, resource.target, resource.data); err != nil {
 			return fmt.Errorf("copy resource %s: %w", resource.target, err)

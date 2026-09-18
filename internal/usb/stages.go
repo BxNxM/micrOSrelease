@@ -49,7 +49,11 @@ func (tracker *stageTracker) skip(index int) {
 }
 
 func (tracker *stageTracker) reconnecting(index int, detail string) {
-	tracker.stages[index].Detail = detail
 	tracker.stages[index].CanReconnect = true
+	tracker.detail(index, detail)
+}
+
+func (tracker *stageTracker) detail(index int, detail string) {
+	tracker.stages[index].Detail = detail
 	tracker.emit()
 }

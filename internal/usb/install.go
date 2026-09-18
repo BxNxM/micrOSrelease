@@ -42,7 +42,9 @@ func (m ReleaseManager) Install(ctx context.Context, target Target, observers ..
 			err = fmt.Errorf("close MicroPython REPL: %w", closeErr)
 		}
 	}()
-	if err := stages.run(ctx, 2, func() error { return copyResources(ctx, session, resources) }); err != nil {
+	if err := stages.run(ctx, 2, func() error {
+		return copyResources(ctx, session, resources, func(detail string) { stages.detail(2, detail) })
+	}); err != nil {
 		return Result{}, err
 	}
 	if err := stages.run(ctx, 3, session.Reset); err != nil {

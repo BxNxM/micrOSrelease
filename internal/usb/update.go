@@ -166,7 +166,7 @@ func (m ReleaseManager) Update(ctx context.Context, target Target, observers ...
 				return fmt.Errorf("restore node configuration: %w", err)
 			}
 		}
-		return copyResources(ctx, session, resources)
+		return copyResources(ctx, session, resources, func(detail string) { stages.detail(4, detail) })
 	}); err != nil {
 		return Result{}, updateError("restore device state", err, backupPath)
 	}

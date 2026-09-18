@@ -23,11 +23,29 @@ type espDeviceProbe struct {
 	flasher *espflasher.Flasher
 }
 
-func newESPDeviceProbe(port string) (deviceProbe, error) {
+func probeOptions(device Device) *espflasher.FlasherOptions {
 	options := espflasher.DefaultOptions()
 	options.ResetMode = espflasher.ResetAuto
 	options.SkipStub = true
-	flasher, err := espflasher.New(port, options)
+	// ResetAuto omits the Unix tight/long UART reset sequences. CP210x and
+	// other bridges need those sequences on some boards; native Espressif USB
+	// must retain the auto strategy (including USB-JTAG reset/re-enumeration).
+	switch strings.ToUpper(device.USBVID) {
+	case "303A":
+		return options
+	case "10C4", "1A86", "0403", "067B": // Silicon Labs, WCH, FTDI, Prolific
+		options.ResetMode = espflasher.ResetDefault
+	default:
+		// Port-name fallback when passive USB metadata is unavailable.
+		if containsIdentifier(device.Port, []string{"SLAB_USBtoUART", "usbserial", "ttyUSB"}) {
+			options.ResetMode = espflasher.ResetDefault
+		}
+	}
+	return options
+}
+
+func newESPDeviceProbe(device Device) (deviceProbe, error) {
+	flasher, err := espflasher.New(device.Port, probeOptions(device))
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +54,7 @@ func newESPDeviceProbe(port string) (deviceProbe, error) {
 
 func (p *espDeviceProbe) ChipName() string { return p.flasher.ChipName() }
 
-func (p *espDeviceProbe) FlashID() (uint8, uint16, error) { return p.flasher.FlashID() }
+func (p *espDeviceProbe) FlashID() (uint8, uint16, error) { return readFlashID(p.flasher) }
 
 func (p *espDeviceProbe) MAC() (net.HardwareAddr, error) { return p.flasher.MAC() }
 
@@ -64,7 +82,7 @@ func (m ReleaseManager) Probe(ctx context.Context, device Device) (Device, error
 
 	opener := m.OpenProbe
 	if opener == nil {
-		opener = newESPDeviceProbe
+		opener = func(string) (deviceProbe, error) { return newESPDeviceProbe(device) }
 	}
 	probe, err := opener(device.Port)
 	if err != nil {

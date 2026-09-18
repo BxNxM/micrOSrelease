@@ -14,6 +14,28 @@ import (
 	assets "github.com/micros/microsctl/storage"
 )
 
+// Discovery only: resets the selected board without flashing or writing files.
+func TestHardwareUSBProbe(t *testing.T) {
+	port := os.Getenv("MICROS_TEST_PROBE_PORT")
+	if port == "" {
+		t.Skip("set MICROS_TEST_PROBE_PORT for live discovery testing")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	start := time.Now()
+	manager := ReleaseManager{}
+	t.Logf("Probing %s", port)
+	selected := manager.reconnectDevice(ctx, Device{Port: port})
+	device, err := manager.Probe(ctx, selected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if chip := os.Getenv("MICROS_TEST_PROBE_CHIP"); chip != "" && normalizeChip(device.Info.Chip) != normalizeChip(chip) {
+		t.Fatalf("identified %s, expected %s", device.Info.Chip, chip)
+	}
+	t.Logf("Identified %s, revision %s, flash %s (%s) in %s; warnings: %v", device.Info.Chip, device.Info.Revision, device.Info.FlashSize, device.Info.FlashID, time.Since(start).Round(time.Millisecond), device.Info.Warnings)
+}
+
 // Opt-in only: this test resets and updates a connected device. Backups are kept
 // in MICROS_TEST_BACKUP_DIR, outside Go's automatically deleted test directories.
 // MICROS_TEST_FLASH=1 additionally exercises full erase/restore with the matching

@@ -48,7 +48,7 @@ func newESPDeviceFlasher(port string, config InstallConfig) (deviceFlasher, erro
 
 func (f *espDeviceFlasher) ChipName() string { return f.flasher.ChipName() }
 
-func (f *espDeviceFlasher) FlashID() (uint8, uint16, error) { return f.flasher.FlashID() }
+func (f *espDeviceFlasher) FlashID() (uint8, uint16, error) { return readFlashID(f.flasher) }
 
 func (f *espDeviceFlasher) EraseFlash(progress func(current, total int)) error {
 	return f.flasher.EraseFlash(espflasher.ProgressFunc(progress))

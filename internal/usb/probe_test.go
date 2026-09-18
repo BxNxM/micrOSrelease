@@ -6,7 +6,37 @@ import (
 	"net"
 	"reflect"
 	"testing"
+
+	"tinygo.org/x/espflasher/pkg/espflasher"
 )
+
+func TestProbeResetStrategyMatchesUSBTransport(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		device Device
+		reset  espflasher.ResetMode
+	}{
+		{"CP210x metadata", Device{Port: "COM7", USBVID: "10c4"}, espflasher.ResetDefault},
+		{"WCH metadata", Device{Port: "COM8", USBVID: "1a86"}, espflasher.ResetDefault},
+		{"FTDI metadata", Device{Port: "COM9", USBVID: "0403"}, espflasher.ResetDefault},
+		{"Prolific metadata", Device{Port: "COM10", USBVID: "067B"}, espflasher.ResetDefault},
+		{"Silabs macOS", Device{Port: "/dev/cu.SLAB_USBtoUART"}, espflasher.ResetDefault},
+		{"Apple macOS", Device{Port: "/dev/cu.usbserial-0001"}, espflasher.ResetDefault},
+		{"WCH macOS", Device{Port: "/dev/cu.wchusbserial1"}, espflasher.ResetDefault},
+		{"Linux UART", Device{Port: "/dev/ttyUSB0"}, espflasher.ResetDefault},
+		{"native C6", Device{Port: "/dev/cu.usbmodem2101", USBVID: "303a"}, espflasher.ResetAuto},
+		{"native USB overrides name", Device{Port: "/dev/ttyUSB0", USBVID: "303A"}, espflasher.ResetAuto},
+		{"unknown modem", Device{Port: "/dev/cu.usbmodem2101"}, espflasher.ResetAuto},
+		{"unknown Windows", Device{Port: "COM7"}, espflasher.ResetAuto},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			options := probeOptions(tc.device)
+			if options.ResetMode != tc.reset || !options.SkipStub {
+				t.Fatalf("probe options: %+v; want reset %v and ROM-only discovery", options, tc.reset)
+			}
+		})
+	}
+}
 
 type fakeDeviceProbe struct {
 	chip     string

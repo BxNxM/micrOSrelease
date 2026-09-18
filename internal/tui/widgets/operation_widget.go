@@ -1,10 +1,12 @@
 package widgets
 
 import (
-	"charm.land/lipgloss/v2"
 	"fmt"
-	"github.com/micros/microsctl/internal/usb"
 	"strings"
+
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/micros/microsctl/internal/usb"
 )
 
 func (m State) OperationWidget(width int) string {
@@ -41,7 +43,8 @@ func (m State) OperationWidget(width int) string {
 		}
 		b.WriteString(lipgloss.NewStyle().Foreground(color).Render(marker+" "+Clean(stage.Name)+" · "+string(stage.State)) + "\n")
 		if stage.State == usb.StageRunning && stage.Detail != "" {
-			b.WriteString(StyleMuted.Render("  "+Clean(stage.Detail)) + "\n")
+			detail := ansi.Truncate("  "+Clean(stage.Detail), max(1, width-StylePanel.GetHorizontalFrameSize()), "…")
+			b.WriteString(StyleMuted.Render(detail) + "\n")
 			canReconnect = canReconnect || stage.CanReconnect
 		}
 	}

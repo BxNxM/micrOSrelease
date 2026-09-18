@@ -70,7 +70,7 @@ func (m State) discoveryDetails(width int) string {
 	lines := []string{
 		fmt.Sprintf("%-9s %s", "Port", device.Port),
 		fmt.Sprintf("%-9s %s", "Revision", valueOrDash(info.Revision)),
-		fmt.Sprintf("%-9s %s", "Flash", flashDescription(info.FlashSize, info.FlashID)),
+		fmt.Sprintf("%-9s %s", "Flash", flashDescription(info.FlashSize)),
 		fmt.Sprintf("%-9s %s", "MAC", valueOrDash(info.MAC)),
 		fmt.Sprintf("%-9s %s", "Features", valueOrDash(strings.Join(info.Features, ", "))),
 	}
@@ -87,12 +87,9 @@ func valueOrDash(value string) string {
 	return value
 }
 
-func flashDescription(size, id string) string {
+func flashDescription(size string) string {
 	if size == "" {
-		return valueOrDash(id)
+		return "Unknown"
 	}
-	if id == "" {
-		return size
-	}
-	return size + " · JEDEC " + id
+	return size
 }

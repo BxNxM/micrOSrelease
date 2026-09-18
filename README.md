@@ -62,12 +62,16 @@ reachable. The same node at multiple addresses appears once. Web UI uses
 4. Choose **Install micrOS** or **Update micrOS**, then confirm with **y** or
    **Enter**; **n** or **Esc** cancels the confirmation.
 
+Discovery shows flash capacity in MB (or KB); unavailable capacity appears as **Unknown**.
+
 **Install micrOS erases the selected device** and copies the bundled resources.
 **Update micrOS** preserves configuration and user files, while replacing files
 at bundled resource destinations. Before replacing firmware, it saves a verified
 filesystem ZIP to the host. Backup failures or limits (1 MiB per file, 64 MiB
 total) stop the update before erase. When chip and both micrOS/MicroPython
 versions already match, update refreshes resources without reflashing.
+During bundled file uploads, one updating line shows the current file and its
+position in the upload list, for example `Uploading 3/42 · /modules/LM_system.mpy`.
 
 During **Reconnect to MicroPython REPL**, you may unplug/reconnect USB and leave
 the operation open; it resumes without flashing again. Devices with a stable USB
