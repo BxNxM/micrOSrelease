@@ -25,6 +25,7 @@ func (m model) renderState() widgets.State {
 		NodeIndex:        m.nodeIndex,
 		DetailAction:     m.detailAction,
 		LoadingInventory: m.loadingInventory,
+		ProbingUSB:       m.probingUSB,
 		UsbScanRequested: m.usbScanRequested,
 		UsbScanned:       m.usbScanned,
 		Discovering:      m.discovering,

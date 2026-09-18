@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"time"
+	"path/filepath"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -18,7 +18,6 @@ import (
 )
 
 func main() {
-	demoDelay := flag.Duration("demo-delay", 1200*time.Millisecond, "simulated feature latency")
 	cidr := flag.String("cidr", "", "IPv4 scan range (default: active private /24 networks)")
 	dataDir := flag.String("data-dir", "", "persistent data directory (default: platform user config directory)")
 	listAssets := flag.Bool("list-assets", false, "list embedded framework and module files and exit")
@@ -45,7 +44,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Open storage: %v\n", err)
 		os.Exit(1)
 	}
-	usbManager := usb.DummyManager{Delay: *demoDelay, Assets: assets.Files()}
+	usbManager := usb.ReleaseManager{Assets: assets.Files(), BackupDir: filepath.Join(store.Root, "backups")}
 	networkDiscoverer := &network.Service{CIDR: *cidr, Password: os.Getenv("MICROS_PASSWORD"), Store: store}
 	model := tui.New(usbManager, networkDiscoverer)
 

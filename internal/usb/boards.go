@@ -1,6 +1,11 @@
 package usb
 
-import "sort"
+import (
+	"sort"
+	"strconv"
+	"strings"
+	"unicode"
+)
 
 func Boards(images []Image) []string {
 	seen := make(map[string]bool)
@@ -23,4 +28,63 @@ func BoardImages(images []Image, board string) []int {
 		}
 	}
 	return indices
+}
+
+// LatestBoardImage returns the newest micrOS release for a board. Versions use
+// numeric comparison so, for example, 3.10.0 sorts after 3.9.0.
+func LatestBoardImage(images []Image, board string) (int, bool) {
+	latest := -1
+	for index, image := range images {
+		if image.Board != board {
+			continue
+		}
+		if latest < 0 || compareVersion(image.Version, images[latest].Version) > 0 ||
+			(compareVersion(image.Version, images[latest].Version) == 0 && compareVersion(image.MicroPython, images[latest].MicroPython) > 0) {
+			latest = index
+		}
+	}
+	return latest, latest >= 0
+}
+
+func compareVersion(left, right string) int {
+	leftParts := numericVersionParts(left)
+	rightParts := numericVersionParts(right)
+	for index := 0; index < max(len(leftParts), len(rightParts)); index++ {
+		var leftPart, rightPart int
+		if index < len(leftParts) {
+			leftPart = leftParts[index]
+		}
+		if index < len(rightParts) {
+			rightPart = rightParts[index]
+		}
+		if leftPart < rightPart {
+			return -1
+		}
+		if leftPart > rightPart {
+			return 1
+		}
+	}
+	return strings.Compare(left, right)
+}
+
+func numericVersionParts(version string) []int {
+	fields := strings.FieldsFunc(version, func(character rune) bool { return !unicode.IsDigit(character) })
+	parts := make([]int, 0, len(fields))
+	for _, field := range fields {
+		part, err := strconv.Atoi(field)
+		if err == nil {
+			parts = append(parts, part)
+		}
+	}
+	return parts
+}
+
+// BoardForChip finds a bundled board using the same chip names as USB validation.
+func BoardForChip(images []Image, chip string) (string, bool) {
+	for _, board := range Boards(images) {
+		if normalizeChip(board) == normalizeChip(chip) {
+			return board, true
+		}
+	}
+	return "", false
 }

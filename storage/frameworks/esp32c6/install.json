@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "protocol": "esp-rom",
+  "chip": "esp32c6",
+  "platform": "esp32c6",
+  "initial_baud": 115200,
+  "flash_baud": 460800,
+  "flash_offset": "0x0",
+  "erase_flash": true,
+  "compress": true,
+  "reset_mode": "auto",
+  "reset_after_flash": true,
+  "hint": "Automatic bootloader entry is normally supported."
+}

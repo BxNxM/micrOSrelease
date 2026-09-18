@@ -1,0 +1,217 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Files</title><meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"><link rel="stylesheet" href="../ustyle.css"><style>
+    /* Top tools row */
+    #file-topbar {
+      display: grid;
+      grid-template-columns: clamp(120px, 20vw, 200px) minmax(0, 1fr);
+      align-items: stretch;
+      gap: 40px;
+      margin-bottom: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    #diskbar,
+    #files-header {
+      border: 1px solid #4B376C;
+      border-radius: 6px;
+      background: #1F1433;
+      box-sizing: border-box;
+    }
+    #diskbar {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+    #files-header {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+    }
+    #top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      flex: 1;
+      flex-wrap: wrap;
+    }
+    #top input[type="file"] {
+      max-width: 100%;
+    }
+
+    /* Main layout */
+    #ui {
+      display: flex;
+      gap: 40px;
+      height: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+    }
+    #folders {
+      width: clamp(120px, 20vw, 200px);
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #files {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Disk Usage Widget */
+    #diskmeter {
+      height: 6px;
+      background: rgba(255,255,255,.2);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    #diskused {
+      height: 100%;
+      width: 0%;
+      background: #4caf50;
+    }
+
+    #menuToggle {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      margin-bottom: 8px;
+      font-size: 1.2rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Scrollable file list ONLY */
+    #list {
+      flex: 1;
+      overflow-y: auto;
+    }
+    #list > .file-item {
+      padding: 6px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      word-break: break-word;
+    }
+    #list > .file-item:hover {
+      background: rgba(255,255,255,.1);
+    }
+    /* Default selection style (files, editor, etc) */
+    .sel {
+      background: transparent;
+      box-shadow: inset 0 0 0 2px color-mix(in srgb, white 60%, transparent);
+    }
+    /* Softer selection for folders only */
+    #folder-path .sel {
+      background: color-mix(in srgb, white 15%, transparent);
+      box-shadow: none;
+    }
+    /* Folder list spacing */
+    #folder-path {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    /* Folder item padding + touch-friendly */
+    #list > .file-item,
+    #folder-path .dir-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .file-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: auto;
+    }
+    .file-actions button {
+      min-height: 28px;
+      padding: 3px 7px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .file-actions button.danger {
+      background: #d62828;
+    }
+    .file-actions button.danger:hover {
+      background: #ef4444;
+    }
+    #folder-path .dir-item {
+      justify-content: space-between;
+      padding: 5px 6px; /*makes them easier to tap*/
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .item-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .item-meta {
+      flex-shrink: 0;
+      min-width: 20px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(255,255,255,.14);
+      color: rgba(255,255,255,.75);
+      font-size: 10px;
+      line-height: 1.3;
+      text-align: center;
+    }
+    /* Hover effect for folders */
+    #folder-path .dir-item:hover {
+      background: rgba(255,255,255,.08);
+    }
+    .folders {
+      margin-bottom: 8px;
+    }
+    #folders-sticky {
+      position: sticky;
+      top: 60px;
+      z-index: 4;
+    }
+    /* directory file listing effect */
+    #list.loading {
+      filter: blur(3px);
+      opacity: 0.5;
+      pointer-events: none; /* prevents clicking while loading */
+      transition: filter 0.15s ease, opacity 0.15s ease;
+    }
+
+    @media (orientation: portrait) and (max-width: 768px) {
+      #menuToggle {
+        display: inline-flex;
+      }
+      #file-topbar {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        position: static;
+      }
+      #folders {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(80vw, 280px);
+        padding: 56px 8px 16px 8px;
+        box-sizing: border-box;
+        transform: translateX(-110%);
+        transition: transform 0.2s ease;
+        z-index: 1000;
+        background: rgba(33, 24, 79, 0.96);
+      }
+      #folders-sticky {
+        top: 0;
+      }
+      #folders.open {
+        transform: translateX(0);
+      }
+    }
+  </style></head><body><h1> micrOS Files </h1><button id="menuToggle" type="button" aria-label="Toggle folders">☰</button><div id="file-topbar"><header id="diskbar"><div id="disktext">Disk: — MB used / — MB free</div><div id="diskmeter"><div id="diskused"></div></div></header><div id="files-header"><div id="top"><input type="file" id="file"><button onclick="uploadFile().then(ok => ok && load())">🔼 Upload</button><button onclick="newFile()">📄 New</button></div></div></div><div id="ui"><aside id="folders"><div id="folders-sticky"><div class="folders">📂 Folders</div><div id="folder-path">/user_data</div></div></aside><main id="files"><div id="list"></div></main></div><script src="../filesui.js"></script></body></html>

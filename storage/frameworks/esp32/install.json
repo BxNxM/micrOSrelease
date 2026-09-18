@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "protocol": "esp-rom",
+  "chip": "esp32",
+  "platform": "esp32",
+  "initial_baud": 115200,
+  "flash_baud": 460800,
+  "flash_offset": "0x1000",
+  "erase_flash": true,
+  "compress": true,
+  "reset_mode": "auto",
+  "reset_after_flash": true,
+  "hint": "Press EN if automatic bootloader entry does not succeed."
+}

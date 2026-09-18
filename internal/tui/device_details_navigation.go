@@ -7,8 +7,9 @@ import (
 )
 
 type removeDeviceMsg struct {
-	uid string
-	err error
+	uid    string
+	err    error
+	hidden bool
 }
 
 func (m model) deviceDetailsKey(key string) (tea.Model, tea.Cmd) {
@@ -32,7 +33,11 @@ func (m model) deviceDetailsKey(key string) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		}
-		m.removingUID = node.UID
+		m.removingUID = node.CardKey()
+		if node.SpecialEndpoint() != "" {
+			m.status = "Hiding special endpoint until the next scan…"
+			return m, func() tea.Msg { return removeDeviceMsg{uid: node.CardKey(), hidden: true} }
+		}
 		m.status = "Removing device from cache…"
 		if m.scanCancel != nil {
 			m.scanCancel()

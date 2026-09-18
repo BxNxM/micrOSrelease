@@ -17,6 +17,7 @@ type Service struct {
 	mu       sync.Mutex
 	known    map[string]Device
 	Store    DeviceStore
+	inspect  func(context.Context, Device, string) (Device, bool)
 }
 
 // Cached loads saved observations without opening network connections.
@@ -30,12 +31,22 @@ func (s *Service) Cached() ([]Device, error) {
 	if err != nil {
 		return nil, err
 	}
+	nodes = append([]Device(nil), nodes...)
 	s.known = make(map[string]Device, len(nodes))
+	var cached []Device
 	for i := range nodes {
 		nodes[i].Cached = true
 		s.known[nodes[i].Address] = nodes[i]
 	}
-	return nodes, nil
+	for _, node := range UniqueDevices(nodes) {
+		// Keep special identities for alias matching, but never display them
+		// without a live check.
+		if node.SpecialEndpoint() != "" {
+			continue
+		}
+		cached = append(cached, node)
+	}
+	return cached, nil
 }
 
 func (s *Service) Discover(ctx context.Context, emit func(Device)) error {
@@ -57,10 +68,20 @@ func (s *Service) Discover(ctx context.Context, emit func(Device)) error {
 		}
 	}
 	if s.known == nil {
-		s.known = map[string]Device{"127.0.0.1:9008": {Name: "__simulator__", UID: "__localhost__", Address: "127.0.0.1:9008"}}
+		s.known = make(map[string]Device)
 	}
 	for address, node := range s.known {
 		targets[address] = node
+	}
+	// Always check these endpoints, even outside the LAN CIDR or without Wi-Fi.
+	for _, node := range specialTargets() {
+		if _, known := targets[node.Address]; !known {
+			targets[node.Address] = node
+		}
+	}
+	probe := s.inspect
+	if probe == nil {
+		probe = inspect
 	}
 	jobs := make(chan Device)
 	results := make(chan Device, 32)
@@ -70,8 +91,8 @@ func (s *Service) Discover(ctx context.Context, emit func(Device)) error {
 		go func() {
 			defer wg.Done()
 			for target := range jobs {
-				node, valid := inspect(ctx, target, s.Password)
-				if valid || target.UID != "" {
+				node, valid := probe(ctx, target, s.Password)
+				if target.SpecialEndpoint() != "" || valid || target.UID != "" {
 					select {
 					case results <- node:
 					case <-ctx.Done():
@@ -83,10 +104,17 @@ func (s *Service) Discover(ctx context.Context, emit func(Device)) error {
 	}
 	go func() {
 		defer close(jobs)
-		// Refresh saved devices first; then look for new devices in the subnet.
+		// Check the two special entry points first, then saved nodes and the LAN.
+		for _, target := range specialTargets() {
+			select {
+			case jobs <- targets[target.Address]:
+			case <-ctx.Done():
+				return
+			}
+		}
 		for _, knownFirst := range []bool{true, false} {
 			for _, target := range targets {
-				if (target.UID != "") != knownFirst {
+				if target.SpecialEndpoint() != "" || (target.UID != "") != knownFirst {
 					continue
 				}
 				select {
@@ -99,11 +127,6 @@ func (s *Service) Discover(ctx context.Context, emit func(Device)) error {
 	}()
 	go func() { wg.Wait(); close(results) }()
 	for node := range results {
-		for address, old := range s.known {
-			if old.UID == node.UID && address != node.Address {
-				delete(s.known, address)
-			}
-		}
 		s.known[node.Address] = node
 		emit(node)
 	}
@@ -112,6 +135,7 @@ func (s *Service) Discover(ctx context.Context, emit func(Device)) error {
 		for _, node := range s.known {
 			nodes = append(nodes, node)
 		}
+		nodes = UniqueDevices(nodes)
 		sort.Slice(nodes, func(i, j int) bool { return nodes[i].Name < nodes[j].Name })
 		if err := s.Store.SaveDevices(nodes); err != nil {
 			return fmt.Errorf("save device cache: %w", err)
@@ -153,9 +177,6 @@ func scanPrefixes(cidr string) ([]netip.Prefix, error) {
 				seen[p] = true
 			}
 		}
-	}
-	if len(prefixes) == 0 {
-		return nil, fmt.Errorf("no private IPv4 network; specify --cidr")
 	}
 	return prefixes, nil
 }

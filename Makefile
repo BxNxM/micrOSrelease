@@ -7,7 +7,7 @@ DARWIN_ARM64_BINARY := $(DIST_DIR)/$(APP_NAME)-darwin-arm64
 LINUX_AMD64_BINARY := $(DIST_DIR)/$(APP_NAME)-linux-amd64
 WINDOWS_AMD64_BINARY := $(DIST_DIR)/$(APP_NAME)-windows-amd64.exe
 
-.PHONY: all build macos-arm64 linux-amd64 windows-amd64 clean help
+.PHONY: all build macos-arm64 linux-amd64 windows-amd64 mr micros-refresh clean help
 
 all: build
 
@@ -22,6 +22,11 @@ linux-amd64: | $(DIST_DIR)
 windows-amd64: | $(DIST_DIR)
 	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 $(GO) build $(BUILD_FLAGS) -o $(WINDOWS_AMD64_BINARY) .
 
+mr: micros-refresh
+
+micros-refresh:
+	@MICROS_SOURCE="$(MICROS_SOURCE)" ./scripts/micros-refresh.sh
+
 $(DIST_DIR):
 	mkdir -p $(DIST_DIR)
 
@@ -34,5 +39,7 @@ help:
 	@echo "  make macos-arm64     Build macOS ARM64 binary"
 	@echo "  make linux-amd64     Build Linux x64 binary"
 	@echo "  make windows-amd64   Build Windows x64 binary"
+	@echo "  make mr              Refresh bundled firmware, modules, and web files"
+	@echo "  make micros-refresh  Long form of make mr"
 	@echo "  make clean           Remove built binaries from $(DIST_DIR)"
 	@echo "  make help            Show this help"

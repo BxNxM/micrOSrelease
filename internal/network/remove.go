@@ -14,7 +14,7 @@ func (s *Service) RemoveDevice(uid string) error {
 		}
 	}
 	if s.Store != nil {
-		if err := s.Store.SaveDevices(nodes); err != nil {
+		if err := s.Store.SaveDevices(UniqueDevices(nodes)); err != nil {
 			return err
 		}
 	}

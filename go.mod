@@ -6,6 +6,8 @@ require (
 	charm.land/bubbletea/v2 v2.0.9
 	charm.land/lipgloss/v2 v2.0.5
 	github.com/charmbracelet/x/ansi v0.11.7
+	go.bug.st/serial v1.8.0
+	tinygo.org/x/espflasher v0.8.1
 )
 
 require (

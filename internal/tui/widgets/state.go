@@ -17,6 +17,7 @@ type State struct {
 	NodeIndex                                      int
 	DetailAction                                   int
 	LoadingInventory, UsbScanRequested, UsbScanned bool
+	ProbingUSB                                     bool
 	Discovering, Confirming, Running               bool
 	Operation                                      string
 	Progress, SpinnerFrame                         int

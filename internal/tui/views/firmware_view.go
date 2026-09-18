@@ -31,8 +31,8 @@ func FirmwareView(m widgets.State) tea.View {
 		width = 88
 	}
 	var b strings.Builder
-	b.WriteString(widgets.StyleTitle.Render("micrOS / Actions / Firmware") + "\n")
-	b.WriteString(widgets.StyleMuted.Render("Bundled frameworks · select an image for simulated USB operations") + "\n\n")
+	b.WriteString(widgets.StyleTitle.Render("micrOS / USB Tools / Firmware") + "\n")
+	b.WriteString(widgets.StyleMuted.Render("Bundled frameworks · select an image for USB operations") + "\n\n")
 	b.WriteString(selector + "\n\n")
 	count := max(1, (m.Height-11)/5)
 	start := m.FirmwareIndex / count * count

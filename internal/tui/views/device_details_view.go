@@ -13,15 +13,16 @@ import (
 func NodeDetailsView(m widgets.State) tea.View {
 	node := m.Nodes[m.NodeIndex-1]
 	width, _, _ := m.NodeGrid()
-	state, nameColor := "OFFLINE", widgets.ColorWarn
+	state := "OFFLINE"
+	_, nameColor := widgets.NodeColors(node, false)
 	latency := "n/a"
 	if node.Online {
-		state, nameColor = "ONLINE", widgets.ColorOnline
+		state = "ONLINE"
 		latency = fmt.Sprintf("%.3fs", node.Latency.Seconds())
 	}
 	var b strings.Builder
 	b.WriteString(widgets.StyleTitle.Render("micrOS / Nodes / Device details") + "\n\n")
-	b.WriteString(lipgloss.NewStyle().Bold(true).Foreground(nameColor).Render(widgets.Clean(node.Name)) + "\n\n")
+	b.WriteString(lipgloss.NewStyle().Bold(true).Foreground(nameColor).Render(widgets.NodeTitle(node)) + "\n\n")
 	fields := [][2]string{
 		{"UID", node.UID}, {"Address", node.Address}, {"Status", state},
 		{"Version", node.Version}, {"Mode", node.Mode}, {"Comm time", latency},
@@ -61,8 +62,11 @@ func NodeDetailsView(m widgets.State) tea.View {
 	}
 	fmt.Fprintf(&b, "\n%-10s %s\n", "Web UI", link)
 	remove := "  🗑 Remove device"
+	if node.SpecialEndpoint() != "" {
+		remove = "  Hide until next scan"
+	}
 	if m.DetailAction == 1 {
-		remove = widgets.StyleSelected.Render("› 🗑 Remove device")
+		remove = widgets.StyleSelected.Render("› " + strings.TrimSpace(remove))
 	}
 	b.WriteString("\n" + remove + "\n")
 	if node.Error != "" {

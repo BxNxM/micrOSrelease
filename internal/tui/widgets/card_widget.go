@@ -15,5 +15,5 @@ func CardWidget(width, height int, border color.Color, lines ...string) string {
 		content[i] = ansi.Truncate(line, max(1, width-4), "…")
 	}
 	return lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(border).
-		Padding(0, 1).Width(width - 2).Height(height).Render(strings.Join(content, "\n"))
+		Padding(0, 1).Width(width).Height(height + 2).Render(strings.Join(content, "\n"))
 }

@@ -13,7 +13,7 @@ func NodesView(m widgets.State) tea.View {
 	width, columns, _ := m.NodeGrid()
 	cardWidth := (width - (columns - 1)) / columns
 	var b strings.Builder
-	b.WriteString(widgets.StyleTitle.Render("micrOS / Nodes") + "\n")
+	b.WriteString(widgets.StyleTitle.Render("micrOS / Nodes 📡") + "\n")
 	b.WriteString(widgets.StyleMuted.Render("TCP 9008 · auto-refresh 5 min") + "\n\n")
 	if m.Discovering {
 		b.WriteString(widgets.ActivityWidget("Network scan & status refresh") + "\n")
@@ -32,19 +32,11 @@ func NodesView(m widgets.State) tea.View {
 			if m.NodeIndex == 0 {
 				border = lipgloss.Color("#D6A2FF")
 			}
-			cards = append(cards, widgets.CardWidget(cardWidth, 4, border, widgets.StyleTitle.Foreground(border).Render("+ ADD/Actions"), "USB install & update", "Release tools", "Enter to open"))
+			cards = append(cards, widgets.CardWidget(cardWidth, 4, border, widgets.StyleTitle.Foreground(border).Render("USB Tools"), "USB install & update", "Release tools", "Enter to open"))
 			continue
 		}
 		node := m.Nodes[index-1]
-		color := widgets.ColorBorder
-		nameColor := widgets.ColorWarn
-		if node.Online {
-			nameColor = widgets.ColorOnline
-		}
-		selected := index == m.NodeIndex
-		if selected {
-			color = widgets.ColorAccent
-		}
+		color, nameColor := widgets.NodeColors(node, index == m.NodeIndex)
 		latency := "n/a"
 		if node.Online {
 			latency = fmt.Sprintf("%.3fs", node.Latency.Seconds())
@@ -53,8 +45,14 @@ func NodesView(m widgets.State) tea.View {
 			latency += " · saved"
 		}
 		lines := []string{
-			lipgloss.NewStyle().Bold(true).Foreground(nameColor).Render(widgets.Clean(node.Name)) + " · " + widgets.Clean(node.Version),
+			lipgloss.NewStyle().Bold(true).Foreground(nameColor).Render(widgets.NodeTitle(node)) + " · " + widgets.Clean(node.Version),
 			fmt.Sprintf("%s · %s", widgets.ModeWidget(node.Mode), latency),
+		}
+		switch node.SpecialEndpoint() {
+		case "Localhost":
+			lines[1] = "127.0.0.1 · " + lines[1]
+		case "AP mode":
+			lines[1] = "192.168.4.1 · " + lines[1]
 		}
 		var features []string
 		for _, key := range widgets.FeatureKeys {

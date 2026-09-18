@@ -2,20 +2,29 @@ package usb
 
 import "context"
 
-// Inventory combines demo USB targets with the real embedded firmware catalog.
-func (m DummyManager) Inventory(ctx context.Context) (Inventory, error) {
-	if err := wait(ctx, m.delay()/3); err != nil {
-		return Inventory{}, err
-	}
+// Inventory combines supported USB serial endpoints with the embedded firmware catalog.
+func (m ReleaseManager) Inventory(ctx context.Context) (Inventory, error) {
 	images, err := Images(m.Assets)
 	if err != nil {
 		return Inventory{}, err
 	}
+	for index := range images {
+		config, _, err := loadInstallConfig(m.Assets, images[index])
+		if err != nil {
+			return Inventory{}, err
+		}
+		images[index].InstallHint = config.Hint
+	}
+	discover := m.Discover
+	if discover == nil {
+		discover = discoverDevices
+	}
+	devices, err := discover(ctx)
+	if err != nil {
+		return Inventory{}, err
+	}
 	return Inventory{
-		Devices: []Device{
-			{Port: "/dev/cu.usbserial-0001"},
-			{Port: "/dev/cu.usbmodem-ESP32S3"},
-		},
-		Images: images,
+		Devices: devices,
+		Images:  images,
 	}, nil
 }

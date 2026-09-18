@@ -2,9 +2,18 @@ package network
 
 import "strings"
 
-// WebUIURL returns the node's mDNS URL only for an enabled Web UI and a safe hostname.
+// WebUIURL uses the reachable address for special endpoints and mDNS for LAN nodes.
 func (d Device) WebUIURL() string {
-	if !strings.EqualFold(d.Features["webui"], "ON") || len(d.Name) == 0 || len(d.Name) > 63 {
+	if !strings.EqualFold(d.Features["webui"], "ON") {
+		return ""
+	}
+	switch d.SpecialEndpoint() {
+	case "Localhost":
+		return "http://localhost"
+	case "AP mode":
+		return "http://192.168.4.1"
+	}
+	if len(d.Name) == 0 || len(d.Name) > 63 {
 		return ""
 	}
 	for i, c := range d.Name {

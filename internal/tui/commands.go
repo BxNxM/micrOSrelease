@@ -15,6 +15,12 @@ type inventoryMsg struct {
 	err       error
 }
 
+type usbProbeMsg struct {
+	index  int
+	device usb.Device
+	err    error
+}
+
 type networkMsg struct {
 	device *network.Device
 	done   bool
@@ -66,8 +72,23 @@ func (m model) inventoryCmd() tea.Cmd {
 	}
 }
 
+func (m model) probeUSBCmd(index int) tea.Cmd {
+	device := m.inventory.Devices[index]
+	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		identified, err := m.usb.Probe(ctx, device)
+		return usbProbeMsg{index: index, device: identified, err: err}
+	}
+}
+
 func (m *model) networkCmd() tea.Cmd {
 	m.removedUID = ""
+	// Retain identity between scans, but do not prefer last scan's reachable
+	// alias over a fresh unavailable special endpoint observation.
+	for i := range m.nodeObservations {
+		m.nodeObservations[i].Cached = true
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	m.scanCancel = cancel
 	queue := make(chan networkMsg, 32)
@@ -109,8 +130,10 @@ func (m model) operationCmd() tea.Cmd {
 	return func() tea.Msg {
 		go func() {
 			defer close(queue)
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cancel()
+			ctx := m.operationContext
+			if ctx == nil {
+				ctx = context.Background()
+			}
 			emit := func(stages []usb.Stage) {
 				select {
 				case queue <- operationMsg{stages: stages}:

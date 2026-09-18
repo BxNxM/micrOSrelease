@@ -10,7 +10,8 @@ import (
 type action int
 
 const (
-	actionInstall action = iota
+	actionDiscovery action = iota
+	actionInstall
 	actionUpdate
 	actionRefresh
 )
@@ -39,6 +40,7 @@ type model struct {
 	showFirmware     bool
 	pendingOperation operation
 	nodes            []network.Device
+	nodeObservations []network.Device
 	showNodes        bool
 	showNodeDetails  bool
 	nodeIndex        int
@@ -46,18 +48,23 @@ type model struct {
 	removingUID      string
 	removedUID       string
 
-	loadingInventory bool
-	usbScanRequested bool
-	usbScanned       bool
-	discovering      bool
-	scanCancel       context.CancelFunc
-	confirming       bool
-	running          bool
-	operation        operation
-	progress         int
-	stages           []usb.Stage
-	dismissOperation bool
-	spinnerFrame     int
+	loadingInventory      bool
+	probingUSB            bool
+	usbScanRequested      bool
+	usbScanned            bool
+	usbDiscoveryRequested bool
+	usbDiscoveryFailures  int
+	discovering           bool
+	scanCancel            context.CancelFunc
+	confirming            bool
+	operationContext      context.Context
+	operationCancel       context.CancelFunc
+	running               bool
+	operation             operation
+	progress              int
+	stages                []usb.Stage
+	dismissOperation      bool
+	spinnerFrame          int
 
 	status string
 	result *usb.Result
@@ -67,6 +74,7 @@ var actions = []struct {
 	title       string
 	description string
 }{
+	{"Discovery", "Scan and identify USB devices; selects matching framework · resets boards"},
 	{"Install micrOS", "Clean USB install; erases the selected device"},
 	{"Update micrOS", "USB update; preserves the node configuration"},
 	{"USB Scan", "Find USB devices"},
