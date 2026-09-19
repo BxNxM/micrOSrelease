@@ -1,9 +1,13 @@
 # microsctl
 
+> Current custom micropython binaries don't have binary OTA update support -- comming-soon
+
 ![ESP32 verified target](https://img.shields.io/badge/ESP32-verified-brightgreen)
 ![ESP32-C6 verified target](https://img.shields.io/badge/ESP32--C6-verified-brightgreen)
 ![ESP32-S3 verified target](https://img.shields.io/badge/ESP32--S3-verified-brightgreen)
-![ESP32-C3 verified target](https://img.shields.io/badge/ESP32--C3-unverified-yellow)
+![ESP32-C3 verified target](https://img.shields.io/badge/ESP32--C3-verified-brightgreen)
+![ESP32-S3-Octo verified target](https://img.shields.io/badge/ESP32--S3--Octo-comming--soon-yellow)
+![ESP32-S31 verified target](https://img.shields.io/badge/ESP32--S31-tbd-yellow)
 
 A terminal app for discovering micrOS nodes and installing or updating ESP boards over USB. Native Go, with firmware and resources bundled into one executable;
 
