@@ -25,23 +25,27 @@ type espDeviceProbe struct {
 
 func probeOptions(device Device) *espflasher.FlasherOptions {
 	options := espflasher.DefaultOptions()
-	options.ResetMode = espflasher.ResetAuto
+	options.ResetMode = automaticResetMode(device)
 	options.SkipStub = true
+	return options
+}
+
+func automaticResetMode(device Device) espflasher.ResetMode {
 	// ResetAuto omits the Unix tight/long UART reset sequences. CP210x and
 	// other bridges need those sequences on some boards; native Espressif USB
 	// must retain the auto strategy (including USB-JTAG reset/re-enumeration).
 	switch strings.ToUpper(device.USBVID) {
 	case "303A":
-		return options
+		return espflasher.ResetAuto
 	case "10C4", "1A86", "0403", "067B": // Silicon Labs, WCH, FTDI, Prolific
-		options.ResetMode = espflasher.ResetDefault
+		return espflasher.ResetDefault
 	default:
 		// Port-name fallback when passive USB metadata is unavailable.
 		if containsIdentifier(device.Port, []string{"SLAB_USBtoUART", "usbserial", "ttyUSB"}) {
-			options.ResetMode = espflasher.ResetDefault
+			return espflasher.ResetDefault
 		}
 	}
-	return options
+	return espflasher.ResetAuto
 }
 
 func newESPDeviceProbe(device Device) (deviceProbe, error) {

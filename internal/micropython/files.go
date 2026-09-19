@@ -3,6 +3,7 @@ package micropython
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -72,8 +73,11 @@ func (c *Client) WriteFileAtomic(ctx context.Context, name string, data []byte) 
 	if err := c.MkdirAll(ctx, path.Dir(name)); err != nil {
 		return err
 	}
-	temporary := name + ".micros-update"
-	if _, err := c.Exec(ctx, fmt.Sprintf("_f=open(%s,'wb')", pythonString(temporary))); err != nil {
+	// Keep scratch files beside the destination, with names belonging only to
+	// this transfer. Never overwrite a user's file or an earlier recovery copy.
+	scratch := path.Join(path.Dir(name), ".micros-"+rand.Text())
+	temporary, backup := scratch+".tmp", scratch+".bak"
+	if _, err := c.Exec(ctx, createUploadScript(temporary, backup)); err != nil {
 		return fmt.Errorf("create temporary file for %s: %w", name, err)
 	}
 	for offset := 0; offset < len(data); offset += chunkSize {
@@ -100,29 +104,40 @@ func (c *Client) WriteFileAtomic(ctx context.Context, name string, data []byte) 
 	} else if !bytes.Equal(remoteHash, localHash[:]) {
 		return fmt.Errorf("verify %s: SHA-256 mismatch", name)
 	}
-	nameQ, temporaryQ, backupQ := pythonString(name), pythonString(temporary), pythonString(name+".micros-backup")
-	code := fmt.Sprintf(`import os
+	if _, err := c.Exec(ctx, activateUploadScript(name, temporary, backup)); err != nil {
+		return fmt.Errorf("activate uploaded file %s: %w", name, err)
+	}
+	return nil
+}
+
+func createUploadScript(temporary, backup string) string {
+	return fmt.Sprintf(`import os
+for _p in (%s,%s):
+ try: os.stat(_p)
+ except OSError as _e:
+  if _e.args[0] != 2: raise
+ else: raise OSError('upload scratch path already exists: '+_p)
+_f=open(%s,'wb')`, pythonString(temporary), pythonString(backup), pythonString(temporary))
+}
+
+func activateUploadScript(name, temporary, backup string) string {
+	return fmt.Sprintf(`import os
 _p=%s
 _t=%s
 _b=%s
-try: os.remove(_b)
-except OSError: pass
 _had=False
 try:
  os.rename(_p,_b)
  _had=True
-except OSError: pass
+except OSError as _e:
+ if _e.args[0] != 2: raise
 try: os.rename(_t,_p)
 except:
  if _had: os.rename(_b,_p)
  raise
 if _had:
  try: os.remove(_b)
- except OSError: pass`, nameQ, temporaryQ, backupQ)
-	if _, err := c.Exec(ctx, code); err != nil {
-		return fmt.Errorf("activate uploaded file %s: %w", name, err)
-	}
-	return nil
+ except OSError: pass`, pythonString(name), pythonString(temporary), pythonString(backup))
 }
 
 func (c *Client) fileSHA256(ctx context.Context, name string) ([]byte, error) {

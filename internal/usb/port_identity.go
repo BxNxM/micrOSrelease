@@ -20,6 +20,7 @@ func enrichUSBIdentity(ctx context.Context, devices []Device) []Device {
 		for _, d := range details {
 			if samePort(devices[i].Port, d.Port) {
 				devices[i].USBSerial, devices[i].USBVID, devices[i].USBPID = d.USBSerial, d.USBVID, d.USBPID
+				devices[i].USBLocation = d.USBLocation
 				break
 			}
 		}
@@ -30,7 +31,14 @@ func enrichUSBIdentity(ctx context.Context, devices []Device) []Device {
 func reconnectCandidates(target Device, devices []Device) []Device {
 	var matches []Device
 	for _, device := range devices {
-		if target.USBSerial != "" {
+		// Firmware can change the port, product ID, and USB serial string.
+		// When available, bind to the physical connection instead of guessing
+		// which newly appeared endpoint is the board being restored.
+		if target.USBLocation != "" {
+			if device.USBLocation == target.USBLocation && strings.EqualFold(device.USBVID, target.USBVID) {
+				matches = append(matches, device)
+			}
+		} else if target.USBSerial != "" {
 			if device.USBSerial == target.USBSerial && strings.EqualFold(device.USBVID, target.USBVID) {
 				matches = append(matches, device)
 			}
@@ -38,7 +46,8 @@ func reconnectCandidates(target Device, devices []Device) []Device {
 			matches = append(matches, device)
 		}
 	}
-	// Duplicate serial numbers must never route a restore to an arbitrary board.
+	// Some drivers expose multiple endpoints for one USB device. Retain the
+	// selected endpoint when present; otherwise never guess among matches.
 	if len(matches) > 1 {
 		for _, device := range matches {
 			if samePort(device.Port, target.Port) {

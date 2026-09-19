@@ -32,6 +32,7 @@ func (m model) renderState() widgets.State {
 		Confirming:       m.confirming,
 		Running:          m.running,
 		Operation:        string(m.operation),
+		OperationError:   m.operationError,
 		Progress:         m.progress,
 		Stages:           m.stages,
 		SpinnerFrame:     m.spinnerFrame,

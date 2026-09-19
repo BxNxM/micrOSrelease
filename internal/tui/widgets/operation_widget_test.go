@@ -29,3 +29,16 @@ func TestUploadDetailReplacesOneLine(t *testing.T) {
 		t.Fatal("completed upload must hide the active filename")
 	}
 }
+
+func TestOperationErrorWrapsWithoutTruncatingCause(t *testing.T) {
+	state := State{Operation: "update", OperationError: "copy resource /modules/feature.mpy: verification failed\nbackup saved to /backups/device.zip"}
+	got := state.OperationWidget(48)
+	for _, text := range []string{"Error:", "feature.mpy", "verification", "device.zip"} {
+		if !strings.Contains(got, text) {
+			t.Fatalf("missing %q from error: %s", text, got)
+		}
+	}
+	if strings.Contains(got, "…") || strings.Contains(got, "Do not disconnect") {
+		t.Fatalf("error was truncated or shows running advice: %s", got)
+	}
+}

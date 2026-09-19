@@ -49,7 +49,8 @@ func TestDismissedOperationRetainsReturningPort(t *testing.T) {
 	if m.inventory.Devices[0].Port != "new" {
 		t.Fatal("dismissed operation lost the returning device port")
 	}
-	if m.running || m.result != nil || len(m.stages) != 0 || m.status != "" {
+	defer m.scanCancel()
+	if m.running || m.result != nil || len(m.stages) != 0 || !m.discovering || m.status != "Scanning TCP 9008…" {
 		t.Fatal("dismissed operation restored transient feedback")
 	}
 }

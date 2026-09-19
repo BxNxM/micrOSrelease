@@ -146,7 +146,7 @@ func archiveBackup(directory, identity, suffix string, write func(io.Writer) err
 		identity = "device"
 	}
 	name := filepath.Join(directory, fmt.Sprintf("%s-%s-%s", identity, time.Now().UTC().Format("20060102T150405.000000000Z"), suffix))
-	if err := os.Rename(file.Name(), name); err != nil {
+	if err := publishBackup(file.Name(), name); err != nil {
 		return "", fmt.Errorf("archive %s: %w", suffix, err)
 	}
 	return name, nil

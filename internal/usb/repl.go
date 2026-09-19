@@ -26,9 +26,17 @@ func openMicroPythonREPL(ctx context.Context, port string, config REPLConfig) (r
 	return micropython.Open(ctx, port, config.Baud, time.Duration(config.ConnectTimeoutSeconds)*time.Second)
 }
 
+// A failed final reboot must not encourage another destructive installation.
+func resetAfterTransfer(session replSession) error {
+	if err := session.Reset(); err != nil {
+		return fmt.Errorf("files are verified; reboot normally without holding BOOT: %w", err)
+	}
+	return nil
+}
+
 // reconnectDevice captures passive USB identity before flashing can remove the port.
 func (m ReleaseManager) reconnectDevice(ctx context.Context, device Device) Device {
-	if device.USBSerial != "" {
+	if device.USBSerial != "" && device.USBLocation != "" {
 		return device
 	}
 	discover := m.Discover
@@ -41,8 +49,17 @@ func (m ReleaseManager) reconnectDevice(ctx context.Context, device Device) Devi
 	if err == nil {
 		for _, candidate := range devices {
 			if samePort(candidate.Port, device.Port) {
-				candidate.Info = device.Info
-				return candidate
+				if device.USBSerial == "" {
+					device.USBSerial = candidate.USBSerial
+				}
+				if device.USBVID == "" {
+					device.USBVID = candidate.USBVID
+				}
+				if device.USBPID == "" {
+					device.USBPID = candidate.USBPID
+				}
+				device.USBLocation = candidate.USBLocation
+				return device
 			}
 		}
 	}
@@ -78,12 +95,16 @@ func (m ReleaseManager) reconnectREPL(ctx context.Context, target Target, config
 		if err := ctx.Err(); err != nil {
 			return nil, target.Device, fmt.Errorf("MicroPython reconnect stopped (last error: %v): %w", lastErr, err)
 		}
-		report("Waiting for MicroPython. You may unplug and reconnect this board; this operation will continue automatically.")
+		if target.Device.USBLocation != "" || target.Device.USBSerial != "" {
+			report("Waiting for board reconnect · USB port may change")
+		} else {
+			report("Waiting for board reconnect on " + target.Device.Port)
+		}
 		scanCtx, stopScan := context.WithTimeout(ctx, 5*time.Second)
 		devices, scanErr := discover(scanCtx)
 		stopScan()
 		candidates := reconnectCandidates(target.Device, devices)
-		if target.Device.USBSerial == "" && len(candidates) == 0 {
+		if target.Device.USBSerial == "" && target.Device.USBLocation == "" && len(candidates) == 0 {
 			// With no stable identity, never guess another port (or another board).
 			// Also permits explicitly supplied ports outside the discovery filters.
 			candidates = []Device{target.Device}
@@ -92,7 +113,11 @@ func (m ReleaseManager) reconnectREPL(ctx context.Context, target Target, config
 			lastErr = scanErr
 		}
 		for _, candidate := range candidates {
-			report("Connecting on " + candidate.Port + ". If it stays here, unplug and reconnect USB; keep this operation open.")
+			detail := "Trying reconnect on " + candidate.Port
+			if !samePort(candidate.Port, target.Device.Port) {
+				detail = "Port changed · reconnect on " + candidate.Port
+			}
+			report(detail)
 			attempt, cancel := context.WithTimeout(ctx, time.Duration(config.REPL.withDefaults().ConnectTimeoutSeconds)*time.Second)
 			session, err := open(attempt, candidate.Port, config.REPL)
 			if err == nil {

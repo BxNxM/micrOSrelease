@@ -13,6 +13,7 @@ func (m *model) clearOperation() {
 	m.progress = 0
 	m.spinnerFrame = 0
 	m.operation = ""
+	m.operationError = ""
 	m.status = ""
 }
 
@@ -38,14 +39,27 @@ func (m model) handleOperation(msg operationMsg) (tea.Model, tea.Cmd) {
 	if msg.err == nil && msg.result.Target.Device.Port != "" && m.deviceIndex >= 0 && m.deviceIndex < len(m.inventory.Devices) {
 		m.inventory.Devices[m.deviceIndex] = msg.result.Target.Device
 	}
-	if m.dismissOperation {
+	if m.dismissOperation && msg.err == nil {
 		m.clearOperation()
-		return m, nil
+		// If the user already returned to Nodes, wait until USB work has
+		// finished before scanning for the rebooted device.
+		return m.refreshNodes()
 	}
 	if msg.err != nil {
-		m.status = "Operation failed: " + msg.err.Error()
+		m.dismissOperation = false
+		m.result = nil
+		m.operationError = msg.err.Error()
+		m.status = "Install failed"
+		if m.operation == operationUpdate {
+			m.status = "Update failed"
+		}
+		// A background failure needs acknowledgement in its operation panel;
+		// never discard its recovery details merely because the user left it.
+		m.showNodes = false
+		m.showNodeDetails = false
 		return m, nil
 	}
+	m.operationError = ""
 	m.result = &msg.result
 	m.progress = 100
 	m.status = msg.result.Summary

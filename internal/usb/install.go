@@ -25,7 +25,7 @@ func (m ReleaseManager) Install(ctx context.Context, target Target, observers ..
 	result = Result{Operation: "install", Target: target, Log: log}
 	stages := newStageTracker(log, observers)
 	if err := stages.run(ctx, 0, func() error {
-		_, err := m.flashFirmware(ctx, target, release)
+		_, err := m.flashFirmware(ctx, target, release, stages.follow(0))
 		return err
 	}); err != nil {
 		return Result{}, err
@@ -47,7 +47,7 @@ func (m ReleaseManager) Install(ctx context.Context, target Target, observers ..
 	}); err != nil {
 		return Result{}, err
 	}
-	if err := stages.run(ctx, 3, session.Reset); err != nil {
+	if err := stages.run(ctx, 3, func() error { return resetAfterTransfer(session) }); err != nil {
 		return Result{}, fmt.Errorf("reset installed device: %w", err)
 	}
 	result.Summary = fmt.Sprintf("micrOS firmware installed; %d bundled files copied and verified.", len(resources))

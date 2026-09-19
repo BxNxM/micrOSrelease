@@ -16,14 +16,16 @@ func (m ReleaseManager) flashFirmware(ctx context.Context, target Target, releas
 
 	openFlasher := m.OpenFlasher
 	if openFlasher == nil {
-		openFlasher = newESPDeviceFlasher
+		openFlasher = func(string, InstallConfig) (deviceFlasher, error) {
+			return newESPDeviceFlasher(target.Device, config)
+		}
 	}
 	var flasher deviceFlasher
 	if err := stages.run(ctx, 0, func() error {
 		var openErr error
 		flasher, openErr = openFlasher(target.Device.Port, config)
 		if openErr != nil {
-			return fmt.Errorf("connect to %s: %w", target.Device.Port, openErr)
+			return fmt.Errorf("connect to ESP bootloader on %s before erase (flash was not erased): %w", target.Device.Port, openErr)
 		}
 		if normalizeChip(flasher.ChipName()) != normalizeChip(config.Chip) {
 			return fmt.Errorf("connected chip is %s, but firmware expects %s", flasher.ChipName(), config.Chip)
@@ -59,12 +61,18 @@ func (m ReleaseManager) flashFirmware(ctx context.Context, target Target, releas
 	if config.EraseFlash {
 		err = stages.run(ctx, 1, func() error { return flasher.EraseFlash(nil) })
 	} else {
-		err = stages.run(ctx, 1, func() error { return nil })
+		stages.skip(1)
 	}
 	if err != nil {
 		return Result{}, fmt.Errorf("erase flash: %w", err)
 	}
-	if err = stages.run(ctx, 2, func() error { return flasher.FlashImage(firmware, offset, nil) }); err != nil {
+	if err = stages.run(ctx, 2, func() error {
+		return flasher.FlashImage(firmware, offset, func(current, total int) {
+			if total > 0 {
+				stages.detail(2, fmt.Sprintf("%d%% transferred", min(100, max(0, int(int64(current)*100/int64(total))))))
+			}
+		})
+	}); err != nil {
 		return Result{}, fmt.Errorf("write firmware: %w", err)
 	}
 	if err = stages.run(ctx, 3, func() error {

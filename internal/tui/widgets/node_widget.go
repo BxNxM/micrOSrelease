@@ -14,16 +14,10 @@ func NodeColors(node network.Device, selected bool) (color.Color, color.Color) {
 	if selected {
 		border = ColorAccent
 	}
-	switch node.SpecialEndpoint() {
-	case "Localhost":
+	if node.SpecialEndpoint() != "" {
 		border, name = lipgloss.Color("#75BFFF"), lipgloss.Color("#75BFFF")
 		if selected {
 			border = lipgloss.Color("#C6E4FF")
-		}
-	case "AP mode":
-		border, name = lipgloss.Color("#F4A261"), lipgloss.Color("#F4A261")
-		if selected {
-			border = lipgloss.Color("#FFD6B3")
 		}
 	}
 	return border, name

@@ -53,6 +53,9 @@ func parseUSBRegistry(data []byte) ([]Device, error) {
 			vid, _ := strconv.ParseUint(node.property("idVendor").Text, 0, 16)
 			pid, _ := strconv.ParseUint(node.property("idProduct").Text, 0, 16)
 			identity.USBVID, identity.USBPID = fmt.Sprintf("%04X", vid), fmt.Sprintf("%04X", pid)
+			if location, err := strconv.ParseUint(node.property("locationID").Text, 0, 32); err == nil && location != 0 {
+				identity.USBLocation = fmt.Sprintf("%08X", location)
+			}
 		}
 		if port := node.property("IOCalloutDevice").Text; port != "" {
 			identity.Port = port

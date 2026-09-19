@@ -110,14 +110,28 @@ func (c *Client) Reset() error {
 		return fmt.Errorf("wait for reset prompt: %w", err)
 	}
 	c.inRaw = false
-	c.watchdog = false
-	if err := c.writeAll([]byte("import machine; print('__MICROS_RESET__'); machine.reset()\r")); err != nil {
+	// A reset can tear down USB before its final print reaches the host. Finish
+	// and acknowledge preparation first, then issue the reset as a separate
+	// command. Never turn an arbitrary disconnect into a successful reset.
+	if err := c.writeAll([]byte("import machine, os; os.sync(); print('__MICROS_RESET_READY__')\r")); err != nil {
+		return fmt.Errorf("prepare device reset: %w", err)
+	}
+	if _, err := c.readUntil(ctx, []byte("__MICROS_RESET_READY__\r\n")); err != nil {
+		return fmt.Errorf("acknowledge reset preparation: %w", err)
+	}
+	if _, err := c.readUntil(ctx, []byte(">>> ")); err != nil {
+		return fmt.Errorf("wait for prepared reset prompt: %w", err)
+	}
+	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if _, err := c.readUntil(ctx, []byte("__MICROS_RESET__\r\n")); err != nil {
-		return fmt.Errorf("acknowledge device reset: %w", err)
+	if err := c.writeAll([]byte("machine.reset()\r")); err != nil {
+		return fmt.Errorf("send device reset: %w", err)
 	}
-	return waitContext(ctx, 100*time.Millisecond)
+	c.watchdog = false
+	// No response is expected after reset; allow it to start before closing.
+	time.Sleep(100 * time.Millisecond)
+	return nil
 }
 
 // Close leaves raw mode when possible and releases the serial port.

@@ -35,7 +35,10 @@ snapshot as read-only and receive no services.
 
 Startup loads cached nodes, inventories USB ports/assets, and begins network
 discovery. A single five-minute timer chain refreshes nodes without overlapping
-scans. Network discovery uses 32 workers on TCP 9008, validates `hello`, then reads
+scans. Returning from a finished USB install/update triggers the manual-refresh
+path; leaving during USB work defers that refresh until completion. The same
+scan/removal guards prevent overlapping discovery. Network discovery uses 32
+workers on TCP 9008, validates `hello`, then reads
 version and feature flags. It checks configured/private IPv4 ranges, saved
 addresses, localhost, and AP mode. Observations merge by UID; reachable special
 endpoints take precedence over LAN aliases and are never displayed from cache
@@ -47,8 +50,11 @@ Inventory lists serial ports and embedded `.bin`/`.uf2` images; installation
 currently supports the `esp-rom` protocol. Discovery probes ESP bootloaders and
 resets boards; a plain scan does not. Probing uses UART reset sequences for known
 USB-to-UART bridges (with a port-name fallback), and auto reset for native
-Espressif USB and unknown endpoints. Board/version metadata comes from firmware
-filenames; board behavior comes from `frameworks/<board>/install.json`.
+Espressif USB and unknown endpoints. Install/update apply the same transport
+selection when the manifest requests auto reset; original ESP32/ESP8266 targets
+always use UART reset. Explicit manifest reset modes still take precedence.
+Board/version metadata comes from firmware filenames; board behavior comes from
+`frameworks/<board>/install.json`.
 The flash-ID adapter sets/restores the original ESP32's dedicated SPI receive
 length register to work around espflasher v0.8.1's incomplete JEDEC reads. Both
 discovery and pre-erase capacity validation use this adapter.
@@ -64,20 +70,41 @@ micrOS version, and MicroPython version match, it only refreshes resources and
 resets. Otherwise it requires a host backup directory and archives the entire
 filesystem, including hidden files and empty directories, before erase. Downloads
 are SHA-256 verified; unreadable files, changed sizes, or limits of 1 MiB/file and
-64 MiB total abort the backup. Archives are privately created, synced, and renamed.
+64 MiB total abort the backup. Archives are privately created and synced, then
+published durably: Unix syncs the renamed entry and ancestor directories; Windows
+uses a write-through move.
+Unavailable runtime access aborts before flashing. Bootloader connection failure
+after backup aborts before erase, retains the archive path, and never retries as
+a clean install. This safety policy is shared by every board type.
 
-After flashing, reconnect follows stable USB serial identity across port changes
-(otherwise the original port), validates chip/runtime, and defaults to waiting
+After flashing, reconnect uses the physical USB location and vendor when available
+(macOS registry), otherwise stable USB serial identity, otherwise the original
+port. Physical matching supports firmware changes to USB serial/product identity
+on the same socket and applies to every board type. Multiple matching endpoints
+retain the selected port when present (including macOS CP210x driver aliases);
+otherwise reconnect waits rather than guessing.
+Reconnect validates chip/runtime and defaults to waiting
 until cancellation. Restore preserves user files except release destinations and
 configured node-config paths; configuration is written to `restore_path` with the
 new micrOS version, then release resources are copied. The already-current path
-does not rewrite configuration. File writes verify temporary uploads before
-replacement; release `main.py` files go last. REPL maintenance feeds a temporary
-watchdog, cleared by the final hardware reset. Resource copies stream the current
+does not rewrite configuration. File writes use unique, collision-checked scratch
+paths and verify uploads before replacement; release `main.py` files go last.
+REPL maintenance feeds a temporary watchdog, cleared by the final hardware reset.
+Reset first synchronizes the filesystem and waits for a preparation acknowledgement
+and interpreter prompt. It then sends `machine.reset()` separately, without reading
+from the disappearing USB endpoint; earlier disconnects and write failures remain
+errors. Final-reset failures explain that verified files only need a normal reboot.
+Resource copies stream the current
 destination and file count through stage details before each verified upload;
-the TUI replaces a single detail line, truncating it to the panel width.
-Pre-write REPL failures attempt to
-restart the unchanged application; post-flash update errors include the backup path.
+the TUI replaces a single detail line, truncating it to the panel width. Install
+and Update also forward the shared flasher's active stage and transfer percentage
+into that detail line, without duplicating the flashing workflow.
+Operation errors are retained separately from transient status and rendered in
+the Install/Update panel, including preflight failures before stages exist.
+Background failures reopen the operation panel and retain recovery details until
+the user leaves that panel.
+Pre-write REPL failures attempt to restart the unchanged application; post-flash
+update errors include the backup path.
 
 ## Embedded releases
 
@@ -120,6 +147,11 @@ MICROS_TEST_PROBE_PORT=/dev/cu.usbserial-0001 \
 MICROS_TEST_PROBE_CHIP=esp32 \
 go test ./internal/usb -run '^TestHardwareUSBProbe$' -v -count=1 -timeout=45s
 
+MICROS_TEST_INSTALL_PORT=/dev/cu.SLAB_USBtoUART \
+MICROS_TEST_INSTALL_BOARD=esp32 \
+MICROS_TEST_BACKUP_DIR=/absolute/path/to/backups \
+go test ./internal/usb -run '^TestHardwareUSBInstall$' -v -count=1 -timeout=16m
+
 MICROS_TEST_PORT=/dev/cu.usbmodem2101 \
 MICROS_TEST_BACKUP_DIR=/absolute/path/to/backups \
 go test ./internal/usb -run '^TestHardwareUSBUpdate$' -v -count=1 -timeout=16m
@@ -131,5 +163,9 @@ go test ./internal/usb -run '^TestHardwareUSBReconnect$' -v -count=1 -timeout=16
 
 `MICROS_TEST_FLASH=1` forces erase/restore in the update test even when current.
 The probe test only identifies and resets the selected board, without writing files.
+The install test first backs up the filesystem, performs a clean install, verifies
+the resources, and restores saved user files/configuration. The connection-only
+variant `TestHardwareUSBInstallConnection` uses the same port/board variables and
+tests bootloader/stub access without erasing or writing flash.
 The reconnect test prints `READY`; unplug for at least three seconds, then
 reconnect. It validates the interpreter and resets without flashing/writing files.

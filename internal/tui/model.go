@@ -61,6 +61,7 @@ type model struct {
 	operationCancel       context.CancelFunc
 	running               bool
 	operation             operation
+	operationError        string
 	progress              int
 	stages                []usb.Stage
 	dismissOperation      bool

@@ -48,9 +48,16 @@ func (m State) OperationWidget(width int) string {
 			canReconnect = canReconnect || stage.CanReconnect
 		}
 	}
+	if m.OperationError != "" {
+		errorText := Clean(strings.ReplaceAll(m.OperationError, "\n", "; "))
+		b.WriteString("\n" + lipgloss.NewStyle().Foreground(ColorError).
+			Width(max(1, width-StylePanel.GetHorizontalFrameSize())).Render("Error: "+errorText) + "\n")
+	}
 	hint := "Do not disconnect the USB device during this operation."
 	if canReconnect {
-		hint = "Waiting for USB · unplug/replug is safe at this stage · resumes automatically · Ctrl+C cancels"
+		hint = "USB reconnect · unplug/replug is safe · use the same USB socket · Ctrl+C cancels"
+	} else if m.OperationError != "" {
+		hint = "Review the error above before retrying."
 	}
 	b.WriteString("\n" + StyleMuted.Render(hint))
 	return StylePanel.Width(width).Render(strings.TrimSuffix(b.String(), "\n"))

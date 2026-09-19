@@ -20,6 +20,7 @@ type State struct {
 	ProbingUSB                                     bool
 	Discovering, Confirming, Running               bool
 	Operation                                      string
+	OperationError                                 string
 	Progress, SpinnerFrame                         int
 	Stages                                         []usb.Stage
 	Status                                         string

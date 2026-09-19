@@ -1,8 +1,11 @@
 # microsctl
 
-A terminal app for discovering micrOS nodes and installing or updating ESP boards
-over USB. Native Go, with firmware and resources bundled into one executable;
-no Python runtime or `esptool.py` required. This is still a proof of concept.
+![ESP32 verified target](https://img.shields.io/badge/ESP32-verified-brightgreen)
+![ESP32-C6 verified target](https://img.shields.io/badge/ESP32--C6-verified-brightgreen)
+![ESP32-S3 verified target](https://img.shields.io/badge/ESP32--S3-verified-brightgreen)
+![ESP32-C3 verified target](https://img.shields.io/badge/ESP32--C3-unverified-yellow)
+
+A terminal app for discovering micrOS nodes and installing or updating ESP boards over USB. Native Go, with firmware and resources bundled into one executable;
 
 ![microsctl TUI](media/TUI.png)
 
@@ -12,11 +15,14 @@ Run in the directory where you want the executable:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/BxNxM/micrOSrelease/main/dist/install.sh | sh
+
 ./microsctl
 ```
 
 Prebuilt binaries support macOS ARM64, Linux x64, and Windows x64. On Windows,
 run the installer in Git Bash, MSYS2, or Cygwin, then use `./microsctl.exe`.
+
+### Advanced
 
 To build from a checkout, use Go 1.25 or newer:
 
@@ -48,8 +54,8 @@ Automatic discovery checks active private IPv4 networks, capped to /24 per
 interface. Protected nodes need `MICROS_PASSWORD` to be identified.
 
 **localhost** (`127.0.0.1:9008`) and **AP mode** (`192.168.4.1:9008`) are also
-checked on every scan, regardless of the LAN range. These cards appear only when
-reachable. The same node at multiple addresses appears once. Web UI uses
+checked on every scan, regardless of the LAN range. Both use blue cards and appear
+only when reachable. The same node at multiple addresses appears once. Web UI uses
 `http://<node-name>.local` for LAN nodes and the local/AP address for special cards.
 
 ## Install or update over USB
@@ -64,23 +70,45 @@ reachable. The same node at multiple addresses appears once. Web UI uses
 
 Discovery shows flash capacity in MB (or KB); unavailable capacity appears as **Unknown**.
 
+Some native-USB boards need **BOOT held while connecting USB** to expose their
+programming port. Use that port for Install. After flashing, release BOOT and
+reconnect/reboot normally when the app reaches **Reconnect to MicroPython REPL**;
+it then copies the bundled files. Boards with automatic reset follow the same flow.
+
 **Install micrOS erases the selected device** and copies the bundled resources.
 **Update micrOS** preserves configuration and user files, while replacing files
 at bundled resource destinations. Before replacing firmware, it saves a verified
 filesystem ZIP to the host. Backup failures or limits (1 MiB per file, 64 MiB
 total) stop the update before erase. When chip and both micrOS/MicroPython
 versions already match, update refreshes resources without reflashing.
+Update must start with MicroPython running normally so it can back up your files.
+If the required bootloader transition fails, it stops before erase and reports
+the backup path; it never falls back to a clean install. Boards that require
+manual mode changes may not support Update yet.
 During bundled file uploads, one updating line shows the current file and its
 position in the upload list, for example `Uploading 3/42 · /modules/LM_system.mpy`.
+The firmware stage also shows its current step: bootloader connection, erase,
+write/verification with transfer percentage, and reset.
+Failures remain in the **Install** or **Update** panel with the failed stage and
+full error, including the affected file or backup path when available. If you leave
+a running operation, a failure reopens its panel so you can review those details.
+If only the final reset fails after all files are verified, reboot normally without
+holding BOOT; another install is not required.
 
 During **Reconnect to MicroPython REPL**, you may unplug/reconnect USB and leave
-the operation open; it resumes without flashing again. Devices with a stable USB
-serial identity can return on a different port; others must use their original
-port. This stage waits indefinitely by default; **Ctrl+C** cancels and exits.
+the operation open; it resumes without flashing again. On macOS, keep the cable
+on the same physical USB socket: reconnect follows it even if firmware changes
+both the serial identity and port name. On other hosts, a stable USB serial
+identity allows a different port; without one, the original port is required.
+The reconnect detail shows the new port when it appears. This stage waits
+indefinitely by default; **Ctrl+C** cancels and exits.
 Keep USB connected during flashing and file transfers.
 
 Use **↑ / ↓** to choose an action or firmware, **Enter** to select, **Esc** to
 go back, and **q** to quit when idle.
+Returning to Nodes after Install or Update automatically refreshes network
+discovery, just like **r**. If USB work is still running, it refreshes when that
+operation finishes.
 
 ## Data and backups
 

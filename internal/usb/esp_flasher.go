@@ -19,7 +19,7 @@ type espDeviceFlasher struct {
 	flasher *espflasher.Flasher
 }
 
-func newESPDeviceFlasher(port string, config InstallConfig) (deviceFlasher, error) {
+func flasherOptions(device Device, config InstallConfig) (*espflasher.FlasherOptions, error) {
 	options := espflasher.DefaultOptions()
 	options.BaudRate = config.InitialBaud
 	options.FlashBaudRate = config.FlashBaud
@@ -35,11 +35,24 @@ func newESPDeviceFlasher(port string, config InstallConfig) (deviceFlasher, erro
 	case "no-reset":
 		options.ResetMode = espflasher.ResetNoReset
 	case "auto":
-		options.ResetMode = espflasher.ResetAuto
+		options.ResetMode = automaticResetMode(device)
+		// These chips always use a UART bridge, including Windows COM ports
+		// where the name alone cannot identify the transport.
+		if chip := normalizeChip(config.Chip); chip == "esp32" || chip == "esp8266" {
+			options.ResetMode = espflasher.ResetDefault
+		}
 	default:
 		return nil, fmt.Errorf("unsupported reset mode %q", config.ResetMode)
 	}
-	flasher, err := espflasher.New(port, options)
+	return options, nil
+}
+
+func newESPDeviceFlasher(device Device, config InstallConfig) (deviceFlasher, error) {
+	options, err := flasherOptions(device, config)
+	if err != nil {
+		return nil, err
+	}
+	flasher, err := espflasher.New(device.Port, options)
 	if err != nil {
 		return nil, err
 	}

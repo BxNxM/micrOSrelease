@@ -12,6 +12,9 @@ type Device struct {
 	USBSerial string
 	USBVID    string
 	USBPID    string
+
+	// USBLocation is the physical USB connection, when provided by the host.
+	USBLocation string
 }
 
 // DeviceInfo contains optional metadata read from an ESP ROM bootloader.

@@ -54,6 +54,25 @@ func (tracker *stageTracker) reconnecting(index int, detail string) {
 }
 
 func (tracker *stageTracker) detail(index int, detail string) {
+	if tracker.stages[index].Detail == detail {
+		return
+	}
 	tracker.stages[index].Detail = detail
 	tracker.emit()
+}
+
+// follow exposes a nested workflow's active step as one updating detail line.
+func (tracker *stageTracker) follow(index int) func([]Stage) {
+	return func(stages []Stage) {
+		for _, stage := range stages {
+			if stage.State == StageRunning {
+				detail := stage.Name
+				if stage.Detail != "" {
+					detail += " · " + stage.Detail
+				}
+				tracker.detail(index, detail)
+				return
+			}
+		}
+	}
 }

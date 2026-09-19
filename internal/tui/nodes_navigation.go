@@ -1,5 +1,18 @@
 package tui
 
+import tea "charm.land/bubbletea/v2"
+
+// refreshNodes shares the manual refresh guards with post-USB navigation.
+func (m model) refreshNodes() (tea.Model, tea.Cmd) {
+	if m.discovering || m.removingUID != "" {
+		return m, nil
+	}
+	m.discovering = true
+	m.status = "Scanning TCP 9008…"
+	cmd := m.networkCmd()
+	return m, cmd
+}
+
 // moveNode follows grid geometry without wrapping horizontally into another row.
 func (m *model) moveNode(key string) {
 	if len(m.nodes) == 0 {

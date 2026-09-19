@@ -8,7 +8,7 @@ import (
 )
 
 func TestMaintenanceFeedsWatchdogOnEveryCommandAndHardResets(t *testing.T) {
-	port := newScriptedPort([]byte(">R\x00OK\x04\x04>R\x00OKone\x04\x04>R\x00OKtwo\x04\x04>>> __MICROS_RESET__\r\n"))
+	port := newScriptedPort([]byte(">R\x00OK\x04\x04>R\x00OKone\x04\x04>R\x00OKtwo\x04\x04>>> __MICROS_RESET_READY__\r\n>>> "))
 	client := newClient(port, time.Second)
 	if err := client.startMaintenance(context.Background()); err != nil {
 		t.Fatal(err)
@@ -90,13 +90,14 @@ type noDrainPort struct{ *scriptedPort }
 func (p noDrainPort) Drain() error { panic("reset must not call an unbounded driver drain") }
 
 func TestResetWaitsForInterpreterAcknowledgement(t *testing.T) {
-	for _, response := range []string{"", ">>> ", ">>> __MICROS_RESET__\r\n"} {
+	ready := ">>> __MICROS_RESET_READY__\r\n>>> "
+	for _, response := range []string{"", ">>> ", ">>> __MICROS_RESET_READY__\r\n", ready} {
 		port := noDrainPort{newScriptedPort([]byte(response))}
 		err := newClient(port, 200*time.Millisecond).Reset()
-		if (err == nil) != (response == ">>> __MICROS_RESET__\r\n") {
+		if (err == nil) != (response == ready) {
 			t.Fatalf("response %q: %v", response, err)
 		}
-		if response == "" && bytes.Contains(port.writes.Bytes(), []byte("machine.reset")) {
+		if response != ready && bytes.Contains(port.writes.Bytes(), []byte("machine.reset")) {
 			t.Fatal("sent reset before interpreter was ready")
 		}
 	}

@@ -42,20 +42,20 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		case "down", "j", "up", "k", "left", "h", "right", "l":
 			m.moveNode(key)
 		case "r":
-			if !m.discovering && m.removingUID == "" {
-				m.discovering = true
-				m.status = "Scanning TCP 9008…"
-				cmd := m.networkCmd()
-				return m, cmd
-			}
+			return m.refreshNodes()
 		}
 		return m, nil
 	}
 	if !m.confirming && (key == "esc" || key == "backspace") {
+		refresh := (m.operation == operationInstall || m.operation == operationUpdate) &&
+			(m.result != nil || m.operationError != "")
 		m.showNodes = true
 		m.dismissOperation = true
 		if !m.running {
 			m.clearOperation()
+			if refresh {
+				return m.refreshNodes()
+			}
 		}
 		return m, nil
 	}
@@ -72,6 +72,7 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 			m.progress = 0
 			m.stages = nil
 			m.result = nil
+			m.operationError = ""
 			m.status = strings.ToUpper(string(m.operation[:1])) + string(m.operation[1:]) + " in progress…"
 			return m, tea.Batch(m.operationCmd(), tickCmd())
 		case "n", "esc", "q":
@@ -157,6 +158,7 @@ func (m model) confirm(requested operation) (tea.Model, tea.Cmd) {
 		m.status = "Select a USB device and release image first"
 		return m, nil
 	}
+	m.clearOperation()
 	m.operation = requested
 	m.confirming = true
 	m.result = nil

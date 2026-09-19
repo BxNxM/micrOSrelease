@@ -62,7 +62,7 @@ func (m ReleaseManager) Update(ctx context.Context, target Target, observers ...
 	if err := stages.run(ctx, 0, func() error {
 		session, err = openREPL(ctx, target.Device.Port, config.REPL)
 		if err != nil {
-			return fmt.Errorf("connect to MicroPython on %s: %w", target.Device.Port, err)
+			return fmt.Errorf("update requires running MicroPython on %s for backup; flash was not erased. Reboot normally without holding BOOT, refresh USB devices, and retry: %w", target.Device.Port, err)
 		}
 		for _, candidate := range config.REPL.ConfigPaths {
 			nodeConfig, err = session.ReadFile(ctx, candidate)
@@ -138,7 +138,7 @@ func (m ReleaseManager) Update(ctx context.Context, target Target, observers ...
 			if closeErr != nil {
 				return fmt.Errorf("close REPL before flashing: %w", closeErr)
 			}
-			_, installErr := m.flashFirmware(ctx, target, release)
+			_, installErr := m.flashFirmware(ctx, target, release, stages.follow(2))
 			return installErr
 		}); err != nil {
 			return Result{}, updateError("install release firmware", err, backupPath)
@@ -170,7 +170,7 @@ func (m ReleaseManager) Update(ctx context.Context, target Target, observers ...
 	}); err != nil {
 		return Result{}, updateError("restore device state", err, backupPath)
 	}
-	if err := stages.run(ctx, 5, session.Reset); err != nil {
+	if err := stages.run(ctx, 5, func() error { return resetAfterTransfer(session) }); err != nil {
 		return Result{}, updateError("reset updated device", err, backupPath)
 	}
 	if alreadyCurrent {

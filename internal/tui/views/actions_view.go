@@ -31,7 +31,7 @@ func ActionsView(m widgets.State) tea.View {
 		page.WriteString(m.ConfirmationWidget())
 		page.WriteString("\n")
 	}
-	if m.Running || m.Result != nil || len(m.Stages) > 0 {
+	if m.Running || m.Result != nil || len(m.Stages) > 0 || m.OperationError != "" {
 		page.WriteString(m.OperationWidget(panelWidth))
 		page.WriteString("\n")
 	}
