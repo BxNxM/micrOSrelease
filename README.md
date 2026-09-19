@@ -73,6 +73,8 @@ only when reachable. The same node at multiple addresses appears once. Web UI us
    **Enter**; **n** or **Esc** cancels the confirmation.
 
 Discovery shows flash capacity in MB (or KB); unavailable capacity appears as **Unknown**.
+Firmware cards list newer micrOS versions first and highlight the version in the
+theme's mint accent color. Matching micrOS versions show newer MicroPython first.
 
 Some native-USB boards need **BOOT held while connecting USB** to expose their
 programming port. Use that port for Install. After flashing, release BOOT and

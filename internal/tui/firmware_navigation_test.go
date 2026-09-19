@@ -44,3 +44,29 @@ func TestFirmwarePickerCancelClearsPendingAction(t *testing.T) {
 		t.Fatal("manual selection after cancellation must not resume an action")
 	}
 }
+
+func TestFirmwarePickerNavigatesNewestFirst(t *testing.T) {
+	m := model{showFirmware: true, boardType: "esp32", inventory: usb.Inventory{
+		Images: []usb.Image{
+			{Board: "esp32", Version: "3.6.2-0"},
+			{Board: "esp32c3", Version: "4.0.0-0"},
+			{Board: "esp32", Version: "3.6.3-0"},
+		},
+	}}
+	m.prepareFirmwarePicker()
+	if m.firmwareIndex != 2 {
+		t.Fatalf("initial firmware index = %d, want newest image at 2", m.firmwareIndex)
+	}
+	next, _ := m.firmwareKey("down")
+	m = next.(model)
+	if m.firmwareIndex != 0 {
+		t.Fatalf("down selected index %d, want older image at 0", m.firmwareIndex)
+	}
+	next, _ = m.firmwareKey("up")
+	m = next.(model)
+	next, _ = m.firmwareKey("enter")
+	m = next.(model)
+	if !m.firmwareSelected || m.imageIndex != 2 {
+		t.Fatalf("selection = %v, image index = %d, want newest image at 2", m.firmwareSelected, m.imageIndex)
+	}
+}

@@ -63,12 +63,17 @@ func FirmwareView(m widgets.State) tea.View {
 			fmt.Sprintf("micrOS %s · MicroPython %s · %.2f MiB", version, mp, float64(image.Size)/(1024*1024)),
 		}
 		for j := range lines {
-			lines[j] = ansi.Truncate(widgets.Clean(lines[j]), width-4, "…")
+			lines[j] = widgets.Clean(lines[j])
 		}
+		micros := widgets.Clean("micrOS " + version)
+		lines[2] = strings.Replace(lines[2], micros, lipgloss.NewStyle().Foreground(widgets.ColorAccent).Render(micros), 1)
 		board := widgets.Clean(strings.ToUpper(image.Board))
 		lines[0] = strings.Replace(lines[0], board, lipgloss.NewStyle().Bold(true).Render(board), 1)
 		if m.FirmwareSelected && i == m.ImageIndex {
 			lines[0] = strings.Replace(lines[0], "✓ selected", lipgloss.NewStyle().Foreground(widgets.ColorOnline).Render("✓ selected"), 1)
+		}
+		for j := range lines {
+			lines[j] = ansi.Truncate(lines[j], width-4, "…")
 		}
 		b.WriteString(widgets.CardWidget(width, 3, border, lines...) + "\n")
 	}

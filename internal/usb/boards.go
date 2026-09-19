@@ -20,6 +20,8 @@ func Boards(images []Image) []string {
 	return boards
 }
 
+// BoardImages returns inventory indices ordered by newest micrOS version first,
+// using the MicroPython version to break ties without reordering the inventory.
 func BoardImages(images []Image, board string) []int {
 	var indices []int
 	for i, image := range images {
@@ -27,6 +29,13 @@ func BoardImages(images []Image, board string) []int {
 			indices = append(indices, i)
 		}
 	}
+	sort.SliceStable(indices, func(i, j int) bool {
+		left, right := images[indices[i]], images[indices[j]]
+		if order := compareVersion(left.Version, right.Version); order != 0 {
+			return order > 0
+		}
+		return compareVersion(left.MicroPython, right.MicroPython) > 0
+	})
 	return indices
 }
 
