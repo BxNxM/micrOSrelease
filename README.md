@@ -23,8 +23,11 @@ curl -fsSL https://raw.githubusercontent.com/BxNxM/micrOSrelease/main/dist/insta
 ./microsctl
 ```
 
-Prebuilt binaries support macOS ARM64, Linux x64, and Windows x64. On Windows,
-run the installer in Git Bash, MSYS2, or Cygwin, then use `./microsctl.exe`.
+Prebuilt binaries support macOS ARM64, Linux x64, Linux ARM64 (including Raspberry
+Pi running 64-bit Raspberry Pi OS), and Windows x64. The installer automatically
+selects the matching binary. Raspberry Pi requires a 64-bit OS; 32-bit ARM is not
+supported. On Windows, run the installer in Git Bash, MSYS2, or Cygwin, then use
+`./microsctl.exe`.
 
 ### Advanced
 

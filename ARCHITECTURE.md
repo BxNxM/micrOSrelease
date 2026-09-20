@@ -120,7 +120,8 @@ See [board configuration](storage/frameworks/README.md) and
 
 ```sh
 make mr MICROS_SOURCE=/path/to/micrOS  # Or: make micros-refresh
-make build                           # macOS ARM64, Linux x64, Windows x64
+make build                           # macOS ARM64, Linux x64/ARM64, Windows x64
+make linux-arm64                     # 64-bit Raspberry Pi OS and other ARM64 Linux
 ```
 
 Refresh uses `micrOS/micropython/micrOS-*.bin`, copies firmware into existing board
@@ -134,6 +135,7 @@ adjacent `precompiled/modules/`. It preserves older destination files and
 ## Validation
 
 ```sh
+sh scripts/install-test.sh
 go test ./...
 go vet ./...
 ```

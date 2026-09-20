@@ -18,6 +18,7 @@ case "$os" in
 	Linux)
 		case "$arch" in
 			x86_64|amd64) asset="microsctl-linux-amd64" ;;
+			aarch64|arm64) asset="microsctl-linux-arm64" ;;
 			*) echo "Unsupported Linux architecture: $arch" >&2; exit 1 ;;
 		esac
 		;;
