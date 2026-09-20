@@ -15,11 +15,20 @@ func NodesView(m widgets.State) tea.View {
 	var b strings.Builder
 	b.WriteString(widgets.StyleTitle.Render("micrOS / Nodes 📡") + "\n")
 	b.WriteString(widgets.StyleMuted.Render("TCP 9008 · auto-refresh 5 min") + "\n\n")
-	if m.Discovering {
-		b.WriteString(widgets.ActivityWidget("Network scan & status refresh") + "\n")
+	updated := "n/a"
+	if !m.LastUpdated.IsZero() {
+		updated = m.LastUpdated.Local().Format("2006-01-02 15:04:05")
 	}
-	if len(m.Nodes) == 0 && !m.Discovering {
-		b.WriteString("No nodes found. Press r to scan.\n")
+	activity := widgets.StyleMuted.Render("● Last updated: " + updated)
+	if m.Discovering {
+		activity = widgets.ActivityWidget("Network scan & status refresh")
+	}
+	b.WriteString(ansi.Truncate(activity, width, "…") + "\n")
+	if len(m.Nodes) == 0 {
+		if !m.Discovering {
+			b.WriteString("No nodes found. Press r to scan.")
+		}
+		b.WriteString("\n")
 	}
 	count := m.CardsPerPage()
 	pages := max(1, (len(m.Nodes)+1+count-1)/count)
@@ -32,7 +41,7 @@ func NodesView(m widgets.State) tea.View {
 			if m.NodeIndex == 0 {
 				border = lipgloss.Color("#D6A2FF")
 			}
-			cards = append(cards, widgets.CardWidget(cardWidth, 4, border, widgets.StyleTitle.Foreground(border).Render("USB Tools"), "USB install & update", "Release tools", "Enter to open"))
+			cards = append(cards, widgets.CardWidget(cardWidth, 4, border, widgets.StyleTitle.Foreground(border).Render("🔧 USB Tools"), "USB install & update", "Release tools", "Enter to open"))
 			continue
 		}
 		node := m.Nodes[index-1]
@@ -58,7 +67,7 @@ func NodesView(m widgets.State) tea.View {
 		for _, key := range widgets.FeatureKeys {
 			features = append(features, strings.ToUpper(key)+": "+widgets.FeatureValueWidget(node.Features[key]))
 		}
-		lines = append(lines, strings.Join(features[:2], " · "), strings.Join(features[2:], " · "))
+		lines = append(lines, strings.Join(features[:3], " · "), strings.Join(features[3:], " · "))
 		cards = append(cards, widgets.CardWidget(cardWidth, 4, color, lines...))
 	}
 	for i := 0; i < len(cards); i += columns {

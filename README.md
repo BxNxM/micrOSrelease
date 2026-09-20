@@ -55,12 +55,14 @@ MICROS_PASSWORD='your-password' ./microsctl  # Password-protected nodes
 
 **Nodes** is the home screen. Use arrows to select a card and **Enter** for
 details. Cards show identity, address, availability, version, mode, latency,
-and WEBUI/ESPNOW/CRON/TIMIRQ flags; unknown values appear as `n/a`.
+and WEBUI/ESPNOW/AUTH/CRON/TIMIRQ flags; unknown values appear as `n/a`.
+Online nodes appear before offline nodes; USB Tools stays first.
 In details, open **Web UI** (or press **o**) when enabled, or remove a node
 from the local cache. A later scan can rediscover it.
 
 Saved nodes appear immediately, marked **saved**, while a background scan checks
 TCP port 9008. Scans repeat every five minutes; **r** refreshes manually.
+A fixed status line shows scan progress, then the last successful refresh time.
 Automatic discovery checks active private IPv4 networks, capped to /24 per
 interface. Protected nodes need `MICROS_PASSWORD` to be identified.
 
@@ -119,6 +121,11 @@ Keep USB connected during flashing and file transfers.
 
 Use **↑ / ↓** to choose an action or firmware, **Enter** to select, **Esc** to
 go back, and **q** to quit when idle.
+USB Tools and the firmware browser share bordered board tabs; **← / →** changes
+the selected board, indicated by its highlighted border.
+In USB Tools, changing boards selects and previews the newest matching firmware.
+In the **f** browser, arrows only browse; **Enter** replaces the current selection
+and **Esc** keeps it, including a firmware selected by Discovery.
 Returning to Nodes after Install or Update automatically refreshes network
 discovery, just like **r**. If USB work is still running, it refreshes when that
 operation finishes.

@@ -49,7 +49,12 @@ func (m *model) applyNetworkDevice(device network.Device) {
 		}
 		m.nodes = append(m.nodes, node)
 	}
-	sort.SliceStable(m.nodes, func(i, j int) bool { return specialRank(m.nodes[i]) < specialRank(m.nodes[j]) })
+	sort.SliceStable(m.nodes, func(i, j int) bool {
+		if m.nodes[i].Online != m.nodes[j].Online {
+			return m.nodes[i].Online
+		}
+		return specialRank(m.nodes[i]) < specialRank(m.nodes[j])
+	})
 	if selected != "" {
 		for i, node := range m.nodes {
 			if node.CardKey() == selected {

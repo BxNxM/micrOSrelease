@@ -20,6 +20,10 @@ func (m model) firmwareKey(key string) (tea.Model, tea.Cmd) {
 		m.switchBoard(1)
 	case "esc", "backspace":
 		m.showFirmware = false
+		if m.firmwareSelected {
+			m.boardType = m.inventory.Images[m.imageIndex].Board
+			m.firmwareIndex = m.imageIndex
+		}
 		if m.pendingOperation != "" {
 			m.status = "Operation cancelled"
 			m.pendingOperation = ""

@@ -53,7 +53,7 @@ func inspect(ctx context.Context, node Device, password string) (Device, bool) {
 		node.Error = err.Error()
 		return node, true
 	}
-	for _, key := range []string{"webui", "espnow", "cron", "timirq"} {
+	for _, key := range []string{"webui", "espnow", "auth", "cron", "timirq"} {
 		value, err := client.Command(ctx, key)
 		if err != nil {
 			node.Error = fmt.Sprintf("%s: %v", key, err)

@@ -1,6 +1,8 @@
 package widgets
 
 import (
+	"time"
+
 	"github.com/micros/microsctl/internal/network"
 	"github.com/micros/microsctl/internal/usb"
 )
@@ -19,6 +21,7 @@ type State struct {
 	LoadingInventory, UsbScanRequested, UsbScanned bool
 	ProbingUSB                                     bool
 	Discovering, Confirming, Running               bool
+	LastUpdated                                    time.Time
 	Operation                                      string
 	OperationError                                 string
 	Progress, SpinnerFrame                         int

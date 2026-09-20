@@ -25,16 +25,17 @@ func NodeDetailsView(m widgets.State) tea.View {
 	b.WriteString(lipgloss.NewStyle().Bold(true).Foreground(nameColor).Render(widgets.NodeTitle(node)) + "\n\n")
 	fields := [][2]string{
 		{"UID", node.UID}, {"Address", node.Address}, {"Status", state},
-		{"Version", node.Version}, {"Mode", node.Mode}, {"Comm time", latency},
-	}
-	if !node.CheckedAt.IsZero() {
-		fields = append(fields, [2]string{"Checked", node.CheckedAt.Local().Format("2006-01-02 15:04:05")})
+		{"Version", node.Version}, {"Mode", node.Mode},
 	}
 	if node.Cached {
 		fields = append(fields, [2]string{"Source", "Saved observation (not checked this session)"})
 	}
 	for _, key := range widgets.FeatureKeys {
 		fields = append(fields, [2]string{strings.ToUpper(key), node.Features[key]})
+	}
+	fields = append(fields, [2]string{"Comm time", latency})
+	if !node.CheckedAt.IsZero() {
+		fields = append(fields, [2]string{"Checked", node.CheckedAt.Local().Format("2006-01-02 15:04:05")})
 	}
 	for _, field := range fields {
 		value := widgets.Clean(field[1])
@@ -47,7 +48,7 @@ func NodeDetailsView(m widgets.State) tea.View {
 			valueStyle = valueStyle.Foreground(nameColor)
 		case "Mode":
 			value = widgets.ModeWidget(value)
-		case "WEBUI", "ESPNOW", "CRON", "TIMIRQ":
+		case "WEBUI", "ESPNOW", "AUTH", "CRON", "TIMIRQ":
 			value = widgets.FeatureValueWidget(value)
 		}
 		value = valueStyle.Render(value)

@@ -42,12 +42,17 @@ func (m *model) switchBoard(direction int) {
 		}
 	}
 	m.boardType = boards[(index+direction+len(boards))%len(boards)]
-	if m.firmwareSelected && m.inventory.Images[m.imageIndex].Board != m.boardType {
-		m.firmwareSelected = false
-	}
 	m.prepareFirmwarePicker()
-	if indices := usb.BoardImages(m.inventory.Images, m.boardType); len(indices) == 1 {
+	if m.showFirmware {
+		return
+	}
+	if m.firmwareSelected && m.inventory.Images[m.imageIndex].Board == m.boardType {
+		return
+	}
+	m.firmwareSelected = false
+	if indices := usb.BoardImages(m.inventory.Images, m.boardType); len(indices) == 1 || (direction != 0 && len(indices) > 0) {
 		m.imageIndex = indices[0]
+		m.firmwareIndex = m.imageIndex
 		m.firmwareSelected = true
 		m.status = "Selected firmware: " + m.inventory.Images[m.imageIndex].Name
 	}
@@ -60,7 +65,7 @@ func (m *model) prepareFirmwarePicker() {
 		return
 	}
 	m.firmwareIndex = indices[0]
-	if m.firmwareSelected {
+	if m.firmwareSelected && m.inventory.Images[m.imageIndex].Board == m.boardType {
 		m.firmwareIndex = m.imageIndex
 	}
 }

@@ -10,54 +10,64 @@ import (
 )
 
 func TestStatusWithFragmentedPromptAndAuthentication(t *testing.T) {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer listener.Close()
-	done := make(chan error, 1)
-	go func() {
-		conn, err := listener.Accept()
-		if err != nil {
-			done <- err
-			return
-		}
-		defer conn.Close()
-		conn.SetDeadline(time.Now().Add(5 * time.Second))
-		fmt.Fprint(conn, "[password] test ")
-		fmt.Fprint(conn, "$ ")
-		commands := []string{"secret", "hello", "version", "conf", "webui", "espnow", "cron", "timirq"}
-		replies := []string{"AuthOk", "hello:test:uid123:rel", "3.6.0-0", "", "True", "False", "True", "False"}
-		for i, expected := range commands {
-			buf := make([]byte, len(expected))
-			offset := 0
-			for offset < len(buf) {
-				n, e := conn.Read(buf[offset:])
-				if e != nil {
-					done <- e
+	for _, tc := range []struct {
+		name, reply, want string
+	}{
+		{"auth enabled", "True", "ON"},
+		{"auth disabled", "False", "OFF"},
+		{"auth unavailable", "Unknown parameter", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			listener, err := net.Listen("tcp", "127.0.0.1:0")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer listener.Close()
+			done := make(chan error, 1)
+			go func() {
+				conn, err := listener.Accept()
+				if err != nil {
+					done <- err
 					return
 				}
-				offset += n
+				defer conn.Close()
+				conn.SetDeadline(time.Now().Add(5 * time.Second))
+				fmt.Fprint(conn, "[password] test ")
+				fmt.Fprint(conn, "$ ")
+				commands := []string{"secret", "hello", "version", "conf", "webui", "espnow", "auth", "cron", "timirq"}
+				replies := []string{"AuthOk", "hello:test:uid123:rel", "3.6.0-0", "", "True", "False", tc.reply, "True", "False"}
+				for i, expected := range commands {
+					buf := make([]byte, len(expected))
+					offset := 0
+					for offset < len(buf) {
+						n, e := conn.Read(buf[offset:])
+						if e != nil {
+							done <- e
+							return
+						}
+						offset += n
+					}
+					if string(buf) != expected {
+						done <- fmt.Errorf("got %q want %q", buf, expected)
+						return
+					}
+					prefix := ""
+					if i >= 3 {
+						prefix = "[configure] "
+					}
+					fmt.Fprint(conn, replies[i]+"\n"+prefix+"test ")
+					fmt.Fprint(conn, "$ ")
+				}
+				done <- nil
+			}()
+			node, valid := inspect(context.Background(), Device{Address: listener.Addr().String()}, "secret")
+			if !valid || !node.Online || node.UID != "uid123" || node.Version != "3.6.0-0" || node.Features["webui"] != "ON" || node.Features["espnow"] != "OFF" || node.Features["auth"] != tc.want || node.Features["cron"] != "ON" || node.Features["timirq"] != "OFF" {
+				t.Fatalf("unexpected node: %+v", node)
 			}
-			if string(buf) != expected {
-				done <- fmt.Errorf("got %q want %q", buf, expected)
-				return
+			if err := <-done; err != nil {
+				t.Fatal(err)
 			}
-			prefix := ""
-			if i >= 3 {
-				prefix = "[configure] "
-			}
-			fmt.Fprint(conn, replies[i]+"\n"+prefix+"test ")
-			fmt.Fprint(conn, "$ ")
-		}
-		done <- nil
-	}()
-	node, valid := inspect(context.Background(), Device{Address: listener.Addr().String()}, "secret")
-	if !valid || !node.Online || node.UID != "uid123" || node.Version != "3.6.0-0" || node.Features["webui"] != "ON" || node.Features["espnow"] != "OFF" {
-		t.Fatalf("unexpected node: %+v", node)
-	}
-	if err := <-done; err != nil {
-		t.Fatal(err)
+		})
 	}
 }
 

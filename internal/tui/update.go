@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -96,6 +97,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.status = fmt.Sprintf("Scan complete · %d known nodes", len(m.nodes))
 		if msg.err != nil {
 			m.status = "Scan stopped: " + msg.err.Error()
+		} else {
+			m.lastUpdated = time.Now()
 		}
 	case operationMsg:
 		return m.handleOperation(msg)

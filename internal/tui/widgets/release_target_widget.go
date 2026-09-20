@@ -27,11 +27,11 @@ func (m State) ReleaseTargetWidget(width int) string {
 	if !m.FirmwareSelected {
 		hintStyle = hintStyle.Foreground(ColorWarn)
 	}
-	content := StyleTitle.Render("CHOOSE FIRMWARE") + "  " + hintStyle.Render("[f] choose firmware") + "\n\n" +
-		fmt.Sprintf("%-12s %s\n", "Board", board) +
-		fmt.Sprintf("%-12s %s\n", "MicroPython", micropython) +
-		fmt.Sprintf("%-12s %s\n", "micrOS", lipgloss.NewStyle().Bold(true).Render(micros)) +
-		fmt.Sprintf("%-12s %s\n", "USB", StyleSelected.Render(device)) +
-		fmt.Sprintf("%-12s %s", "Image", image)
-	return StylePanel.Width(width).Render(m.BoardSelectorWidget() + "\n\n" + content)
+	content := StyleTitle.Render("CHOOSE FIRMWARE") + "  " + hintStyle.Render("[f] choose firmware") + "\n" +
+		fmt.Sprintf("  %-12s %s\n", "Board", board) +
+		fmt.Sprintf("  %-12s %s\n", "MicroPython", micropython) +
+		fmt.Sprintf("  %-12s %s\n", "micrOS", lipgloss.NewStyle().Bold(true).Render(micros)) +
+		fmt.Sprintf("  %-12s %s\n", "USB", StyleSelected.Render(device)) +
+		fmt.Sprintf("  %-12s %s", "Image", image)
+	return StylePanel.PaddingTop(0).Width(width).Render(m.BoardSelectorWidget(width-StylePanel.GetHorizontalFrameSize()) + "\n\n" + content)
 }

@@ -7,9 +7,9 @@ func ModeWidget(mode string) string {
 	color := ColorMuted
 	switch mode {
 	case "dev":
-		color = ColorWarn
+		color = ColorOff
 	case "rel":
-		color = ColorOnline
+		color = ColorRelease
 	}
 	return lipgloss.NewStyle().Bold(false).Foreground(color).Render(Clean(mode))
 }

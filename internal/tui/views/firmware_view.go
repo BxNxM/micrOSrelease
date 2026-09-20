@@ -11,7 +11,11 @@ import (
 )
 
 func FirmwareView(m widgets.State) tea.View {
-	selector := m.BoardSelectorWidget()
+	width := max(20, min(100, m.Width-4))
+	if m.Width == 0 {
+		width = 88
+	}
+	selector := m.BoardSelectorWidget(width)
 	indices := usb.BoardImages(m.Inventory.Images, m.BoardType)
 	var images []usb.Image
 	focused, selected := 0, -1
@@ -26,15 +30,11 @@ func FirmwareView(m widgets.State) tea.View {
 	}
 	m.Inventory.Images = images
 	m.FirmwareIndex, m.ImageIndex = focused, selected
-	width := max(20, min(100, m.Width-4))
-	if m.Width == 0 {
-		width = 88
-	}
 	var b strings.Builder
-	b.WriteString(widgets.StyleTitle.Render("micrOS / USB Tools / Firmware") + "\n")
+	b.WriteString(widgets.StyleTitle.Render("micrOS / 🔧 USB Tools / Firmware") + "\n")
 	b.WriteString(widgets.StyleMuted.Render("Bundled frameworks · select an image for USB operations") + "\n\n")
 	b.WriteString(selector + "\n\n")
-	count := max(1, (m.Height-11)/5)
+	count := max(1, (m.Height-10-lipgloss.Height(selector))/5)
 	start := m.FirmwareIndex / count * count
 	if len(m.Inventory.Images) == 0 {
 		b.WriteString("No firmware images bundled. Add .bin or .uf2 files to\nstorage/frameworks and rebuild.\n")

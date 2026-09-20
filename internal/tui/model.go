@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"time"
 
 	"github.com/micros/microsctl/internal/network"
 	"github.com/micros/microsctl/internal/usb"
@@ -55,6 +56,7 @@ type model struct {
 	usbDiscoveryRequested bool
 	usbDiscoveryFailures  int
 	discovering           bool
+	lastUpdated           time.Time
 	scanCancel            context.CancelFunc
 	confirming            bool
 	operationContext      context.Context

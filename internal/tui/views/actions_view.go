@@ -19,7 +19,7 @@ func ActionsView(m widgets.State) tea.View {
 	var page strings.Builder
 	page.WriteString(widgets.StyleLogo.Render("micrOS"))
 	page.WriteString("  ")
-	page.WriteString(widgets.StyleTitle.Render("/ USB Tools"))
+	page.WriteString(widgets.StyleTitle.Render("/ 🔧 USB Tools"))
 	page.WriteString("\n")
 	page.WriteString(widgets.StyleMuted.Render("Native ESP install · state-preserving USB update"))
 	page.WriteString("\n\n")

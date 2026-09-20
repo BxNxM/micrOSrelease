@@ -1,11 +1,52 @@
 package tui
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/micros/microsctl/internal/network"
 	"github.com/micros/microsctl/internal/tui/widgets"
 )
+
+func TestOnlineNodesSortFirstAndPreserveSelection(t *testing.T) {
+	offline := network.Device{UID: "offline", Address: "192.168.1.10:9008"}
+	online := network.Device{UID: "online", Address: "192.168.1.11:9008", Online: true}
+	otherOffline := network.Device{UID: "other-offline", Address: "192.168.1.12:9008"}
+	otherOnline := network.Device{UID: "other-online", Address: "192.168.1.13:9008", Online: true}
+	ap := network.Device{UID: "ap", Address: network.APAddress, Online: true}
+	local := network.Device{UID: "local", Address: network.LocalhostAddress, Online: true}
+	m := model{}
+	for _, node := range []network.Device{offline, online, otherOffline, otherOnline, ap, local} {
+		m.applyNetworkDevice(node)
+	}
+	checkOrder := func(want []string) {
+		t.Helper()
+		var got []string
+		for _, node := range m.nodes {
+			got = append(got, node.UID)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("node order = %v, want %v", got, want)
+		}
+	}
+	checkOrder([]string{"local", "ap", "online", "other-online", "offline", "other-offline"})
+	if m.nodeIndex != 0 {
+		t.Fatal("sorting moved selection away from USB Tools")
+	}
+	m.nodeIndex, m.showNodeDetails = 5, true
+	offline.Online = true
+	m.applyNetworkDevice(offline)
+	checkOrder([]string{"local", "ap", "offline", "online", "other-online", "other-offline"})
+	if m.nodeIndex != 3 || !m.showNodeDetails || m.nodes[m.nodeIndex-1].UID != offline.UID {
+		t.Fatal("bringing selected node online lost selection or details")
+	}
+	offline.Online = false
+	m.applyNetworkDevice(offline)
+	checkOrder([]string{"local", "ap", "online", "other-online", "offline", "other-offline"})
+	if m.nodeIndex != 5 || !m.showNodeDetails || m.nodes[m.nodeIndex-1].UID != offline.UID {
+		t.Fatal("taking selected node offline lost selection or details")
+	}
+}
 
 func TestSpecialCardsPreserveDistinctDevicesAndSelection(t *testing.T) {
 	lan := network.Device{Address: "192.168.1.10:9008", UID: "lan", Online: true}

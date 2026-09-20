@@ -2,7 +2,7 @@ package widgets
 
 import "charm.land/lipgloss/v2"
 
-var FeatureKeys = []string{"webui", "espnow", "cron", "timirq"}
+var FeatureKeys = []string{"webui", "espnow", "auth", "cron", "timirq"}
 
 // FeatureValueWidget is shared by node cards and the device details screen.
 func FeatureValueWidget(value string) string {

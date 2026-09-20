@@ -1,10 +1,50 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/micros/microsctl/internal/usb"
 )
+
+func TestFirmwareBrowsingPreservesDiscoverySelection(t *testing.T) {
+	for _, exitKey := range []string{"esc", "enter"} {
+		t.Run(exitKey, func(t *testing.T) {
+			m := model{inventory: usb.Inventory{
+				Devices: []usb.Device{{Port: "test", Info: &usb.DeviceInfo{Chip: "ESP32"}}},
+				Images: []usb.Image{
+					{Board: "esp32", Name: "discovered-old.bin", Version: "3.9.0"},
+					{Board: "esp32", Name: "discovered-new.bin", Version: "3.10.0"},
+					{Board: "esp32c3", Name: "c3.bin", Version: "3.10.0"},
+					{Board: "esp32c6", Name: "c6-old.bin", Version: "3.9.0"},
+					{Board: "esp32c6", Name: "c6-new.bin", Version: "3.10.0"},
+				},
+			}}
+			if !m.selectDeviceBoard() || m.imageIndex != 1 {
+				t.Fatal("discovery did not select the newest matching image")
+			}
+			for _, key := range []string{"f", "down", "right", "right", "down"} {
+				next, _ := m.handleKey(key)
+				m = next.(model)
+				if !m.firmwareSelected || m.imageIndex != 1 || m.selectedTarget().Image.Name != "discovered-new.bin" {
+					t.Fatalf("%s replaced the discovery-selected image while browsing", key)
+				}
+			}
+			if m.boardType != "esp32c6" || m.firmwareIndex != 3 || !strings.Contains(m.View().Content, "c6-old.bin") {
+				t.Fatal("board navigation did not focus and preview a matching image")
+			}
+			next, _ := m.handleKey(exitKey)
+			m = next.(model)
+			wantBoard, wantIndex := "esp32", 1
+			if exitKey == "enter" {
+				wantBoard, wantIndex = "esp32c6", 3
+			}
+			if m.showFirmware || !m.firmwareSelected || m.imageIndex != wantIndex || m.firmwareIndex != wantIndex || m.boardType != wantBoard {
+				t.Fatalf("%s left mismatched selection: board=%s image=%d focus=%d", exitKey, m.boardType, m.imageIndex, m.firmwareIndex)
+			}
+		})
+	}
+}
 
 func TestFirmwarePickerContinuesRequestedAction(t *testing.T) {
 	for _, requested := range []operation{operationInstall, operationUpdate} {

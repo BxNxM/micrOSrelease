@@ -29,6 +29,7 @@ func (m model) renderState() widgets.State {
 		UsbScanRequested: m.usbScanRequested,
 		UsbScanned:       m.usbScanned,
 		Discovering:      m.discovering,
+		LastUpdated:      m.lastUpdated,
 		Confirming:       m.confirming,
 		Running:          m.running,
 		Operation:        string(m.operation),

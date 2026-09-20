@@ -2,6 +2,7 @@ package tui
 
 import (
 	"github.com/micros/microsctl/internal/usb"
+	"strings"
 	"testing"
 )
 
@@ -24,13 +25,16 @@ func TestOpeningActionsSelectsCurrentBoardFirmware(t *testing.T) {
 	}
 }
 
-func TestSwitchBoardSelectsOnlyUnambiguousFirmware(t *testing.T) {
+func TestSwitchBoardSelectsNewestFirmware(t *testing.T) {
 	m := model{boardType: "esp32", firmwareSelected: true, inventory: usb.Inventory{
-		Images: []usb.Image{{Board: "esp32"}, {Board: "esp32c3"}, {Board: "esp32c3"}},
+		Images: []usb.Image{{Board: "esp32"}, {Board: "esp32c3", Name: "newest-c3.bin", Version: "3.10.0"}, {Board: "esp32c3", Version: "3.9.0"}},
 	}}
 	m.switchBoard(1)
-	if m.boardType != "esp32c3" || m.firmwareSelected || m.firmwareIndex != 1 {
-		t.Fatal("board switch should filter images and clear incompatible selection")
+	if m.boardType != "esp32c3" || !m.firmwareSelected || m.imageIndex != 1 || m.firmwareIndex != 1 {
+		t.Fatal("board switch should select and preview the newest matching image")
+	}
+	if preview := m.renderState().ReleaseTargetWidget(80); !strings.Contains(preview, "newest-c3.bin") {
+		t.Fatal("USB Tools preview did not show the newly selected board firmware")
 	}
 	next, _ := m.firmwareKey("down")
 	m = next.(model)
@@ -41,6 +45,10 @@ func TestSwitchBoardSelectsOnlyUnambiguousFirmware(t *testing.T) {
 	m = next.(model)
 	if !m.firmwareSelected || m.imageIndex != 2 {
 		t.Fatal("Enter should select firmware explicitly")
+	}
+	m.switchBoard(0)
+	if !m.firmwareSelected || m.imageIndex != 2 || m.firmwareIndex != 2 {
+		t.Fatal("reopening USB Tools should retain the user's older firmware choice")
 	}
 	m.switchBoard(1)
 	if m.boardType != "esp32" || !m.firmwareSelected || m.imageIndex != 0 {
