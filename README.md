@@ -9,7 +9,11 @@
 ![ESP32-S3-Octo verified target](https://img.shields.io/badge/ESP32--S3--Octo-comming--soon-yellow)
 ![ESP32-S31 verified target](https://img.shields.io/badge/ESP32--S31-tbd-yellow)
 
-A terminal app for discovering micrOS nodes and installing or updating ESP boards over USB. Native Go, with firmware and resources bundled into one executable;
+[micrOS](https://github.com/BxNxM/micrOS) is a local-first automation platform for Wi-Fi-enabled MicroPython boards.
+
+Build a network-controlled lamp, read a sensor over Socket/HTTP, or let one board trigger another. micrOS turns a compatible Wi-Fi microcontroller into a programmable automation node—without a required cloud service.
+
+> A standalone terminal app for discovering micrOS nodes and installing or updating ESP boards over USB. Native Go, with firmware and resources bundled into one executable;
 
 ![microsctl TUI](media/TUI.png)
 
