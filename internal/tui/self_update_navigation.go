@@ -14,8 +14,17 @@ func (m model) selfUpdateKey(key string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// toggleAppUpdateBanner is a session-only display test, intentionally absent from hints.
-func (m model) toggleAppUpdateBanner() (tea.Model, tea.Cmd) {
-	m.appUpdate.hidden = !m.appUpdate.hidden
+// toggleAppUpdateMode allows a session-only reinstall, intentionally absent from hints.
+func (m model) toggleAppUpdateMode() (tea.Model, tea.Cmd) {
+	if m.appUpdate.updater == nil {
+		return m, nil
+	}
+	m.appUpdate.updateMode = !m.appUpdate.updateMode
+	if !m.appUpdate.checking {
+		if m.appUpdate.updateMode && m.appUpdate.offer.Version == "" {
+			return m.requestAppUpdate()
+		}
+		m.appUpdate.status = ""
+	}
 	return m, nil
 }

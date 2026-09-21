@@ -55,8 +55,10 @@ details in ARCHITECTURE and coding-agent constraints here.
 
 - Check releases in the background; install only after `u` on Nodes. Offer any
   different microsctl version, and never select a fallback OS/architecture.
-- Nodes has a hidden `x` display-test toggle for the update banner. Keep it out
-  of user hints/README; it only changes visibility for the running session.
+- Nodes has a hidden `x` toggle for update mode. Keep it out of user hints/README.
+  Update mode appears automatically for a different version; manual mode also
+  permits a real same-version reinstall with `u`, using a successfully checked
+  manifest. Keep the base version banner visible when update mode is off.
 - Root `MANIFEST.yaml` is the sole application version source. Bump its
   microsctl version for releases; publish it with matching `dist/` builds.
 - Keep the release URL (including branch) in `microsctl.url` in `MANIFEST.yaml`

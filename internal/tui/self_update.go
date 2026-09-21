@@ -9,7 +9,7 @@ import (
 )
 
 type appUpdateState struct {
-	hidden                                  bool
+	updateMode                              bool
 	updater                                 selfupdate.AppUpdater
 	current, firmware, status               string
 	offer                                   selfupdate.UpdateOffer
@@ -56,10 +56,9 @@ func (m model) handleUpdateChecked(msg updateCheckedMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case msg.err != nil:
 		m.appUpdate.status = "Update check unavailable · u retry"
-	case msg.offer.Available:
-		m.appUpdate.status = fmt.Sprintf("u update & restart · microsctl %s → %s · micrOS %s", m.appUpdate.current, msg.offer.Version, msg.offer.MicrOSVersion)
 	default:
-		m.appUpdate.status = "Up to date · u check again"
+		m.appUpdate.updateMode = m.appUpdate.updateMode || msg.offer.Available
+		m.appUpdate.status = ""
 	}
 	return m, nil
 }
@@ -68,7 +67,7 @@ func (m model) requestAppUpdate() (tea.Model, tea.Cmd) {
 	if m.appUpdate.updater == nil || m.appUpdate.checking || m.appUpdate.installing {
 		return m, nil
 	}
-	if !m.appUpdate.offer.Available {
+	if !m.appUpdate.updateMode || m.appUpdate.offer.Version == "" {
 		m.appUpdate.checking = true
 		m.appUpdate.status = "Checking for updates…"
 		return m, m.checkAppUpdateCmd()
@@ -129,11 +128,15 @@ func (m model) handleAppUpdate(msg appUpdateMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) appUpdateLine() string {
-	if m.appUpdate.hidden || m.appUpdate.updater == nil {
+	if m.appUpdate.updater == nil {
 		return ""
 	}
-	if m.appUpdate.offer.Available {
-		return m.appUpdate.status
+	line := fmt.Sprintf("microsctl %s · micrOS %s", m.appUpdate.current, m.appUpdate.firmware)
+	if m.appUpdate.status != "" {
+		return line + " · " + m.appUpdate.status
 	}
-	return fmt.Sprintf("microsctl %s · micrOS %s · %s", m.appUpdate.current, m.appUpdate.firmware, m.appUpdate.status)
+	if m.appUpdate.updateMode && m.appUpdate.offer.Version != "" {
+		return line + fmt.Sprintf(" · Update %s · Press u to update", m.appUpdate.offer.Version)
+	}
+	return line
 }

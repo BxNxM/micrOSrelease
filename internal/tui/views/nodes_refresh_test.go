@@ -44,7 +44,7 @@ func TestNetworkActivityKeepsGridPosition(t *testing.T) {
 func TestUpdateStatusHasStableTopRow(t *testing.T) {
 	state := widgets.State{Width: 100, Height: 30}
 	row := -1
-	for _, line := range []string{"Checking for updates…", "u update & restart · microsctl 0.1.0 → 0.2.0", "Updating microsctl… 50%", "Update check unavailable · u retry"} {
+	for _, line := range []string{"Checking for updates…", "microsctl 0.1.0 · Update 0.2.0 · Press u to update", "Updating microsctl… 50%", "Update check unavailable · u retry"} {
 		state.AppUpdateLine = line
 		text := ansi.Strip(NodesView(state).Content)
 		lines := strings.Split(text, "\n")

@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -33,7 +34,7 @@ func TestSelfUpdateNeedsUAndRestartsAfterSuccess(t *testing.T) {
 	m.loadingInventory = false
 	next, _ := m.Update(m.checkAppUpdateCmd()())
 	m = next.(model)
-	if updater.installed != 0 || !strings.Contains(m.appUpdateLine(), "u update") {
+	if updater.installed != 0 || !strings.Contains(m.appUpdateLine(), "Update 0.2.0 · Press u to update") {
 		t.Fatal("check did not offer update")
 	}
 	next, cmd := m.handleKey("u")
@@ -124,27 +125,92 @@ func TestUpdateCheckFailureCanRetryWithoutBlockingNodes(t *testing.T) {
 	}
 }
 
-func TestHiddenUpdateBannerTogglePreservesUpdateState(t *testing.T) {
-	updater := &fakeAppUpdater{}
-	m := New(nil, nil, WithUpdater(updater, "0.1.0", "3.6.3-0"))
-	if m.appUpdateLine() == "" {
-		t.Fatal("banner initially hidden")
+func TestUpdateModeToggleAndSameVersionInstall(t *testing.T) {
+	for _, available := range []bool{false, true} {
+		t.Run(fmt.Sprint(available), func(t *testing.T) {
+			updater := &fakeAppUpdater{}
+			current := "0.2.0"
+			if available {
+				current = "0.1.0"
+			}
+			m := New(nil, nil, WithUpdater(updater, current, "3.6.3-0"))
+			m.loadingInventory = false
+			next, _ := m.Update(updateCheckedMsg{offer: selfupdate.UpdateOffer{Version: "0.2.0", Available: available}})
+			m = next.(model)
+			base := "microsctl " + current + " · micrOS 3.6.3-0"
+			extended := base + " · Update 0.2.0 · Press u to update"
+			want := base
+			if available {
+				want = extended
+			}
+			if m.appUpdateLine() != want || updater.installed != 0 {
+				t.Fatalf("unexpected initial banner: %s", m.appUpdateLine())
+			}
+			// X toggles the offer without hiding the version line or installing.
+			for range 2 {
+				next, cmd := m.handleKey("x")
+				m = next.(model)
+				if want == base {
+					want = extended
+				} else {
+					want = base
+				}
+				if cmd != nil || m.appUpdateLine() != want || updater.installed != 0 {
+					t.Fatalf("unexpected toggled banner: %s", m.appUpdateLine())
+				}
+			}
+			if !m.appUpdate.updateMode {
+				next, _ = m.handleKey("x")
+				m = next.(model)
+			}
+			next, cmd := m.handleKey("u")
+			m = next.(model)
+			if !m.appUpdate.installing || cmd == nil {
+				t.Fatal("active update mode did not start installation")
+			}
+			next, toggleCmd := m.handleKey("x")
+			m = next.(model)
+			if toggleCmd != nil || !m.appUpdate.updateMode || !strings.Contains(m.appUpdateLine(), "Updating microsctl") {
+				t.Fatal("x changed an active installation")
+			}
+			for cmd != nil {
+				msg := cmd()
+				if _, quit := msg.(tea.QuitMsg); quit {
+					break
+				}
+				next, cmd = m.Update(msg)
+				m = next.(model)
+			}
+			if updater.installed != 1 || !m.RestartRequested() {
+				t.Fatal("installation did not complete and request restart")
+			}
+		})
 	}
+}
+
+func TestManualUpdateModeSurvivesPendingCheck(t *testing.T) {
+	m := New(nil, nil, WithUpdater(&fakeAppUpdater{}, "0.2.0", "3.6.3-0"))
 	next, cmd := m.handleKey("x")
 	m = next.(model)
-	if cmd != nil || m.appUpdateLine() != "" || !m.appUpdate.checking {
-		t.Fatal("toggle changed update operation")
+	if cmd != nil || !m.appUpdate.checking || !m.appUpdate.updateMode {
+		t.Fatal("toggle disrupted pending check")
 	}
-	next, _ = m.Update(updateCheckedMsg{offer: selfupdate.UpdateOffer{Version: "0.2.0", Available: true}})
+	next, _ = m.Update(updateCheckedMsg{offer: selfupdate.UpdateOffer{Version: "0.2.0"}})
 	m = next.(model)
-	if m.appUpdateLine() != "" || !m.appUpdate.offer.Available {
-		t.Fatal("background result reset visibility or lost offer")
+	if !strings.Contains(m.appUpdateLine(), "Update 0.2.0 · Press u to update") {
+		t.Fatal("check lost manual update mode")
 	}
-	m.appUpdate.installing = true
-	next, cmd = m.handleKey("x")
+}
+
+func TestManualUpdateModeRequiresSuccessfulCheck(t *testing.T) {
+	updater := &fakeAppUpdater{}
+	m := New(nil, nil, WithUpdater(updater, "0.2.0", "3.6.3-0"))
+	next, _ := m.Update(updateCheckedMsg{err: errors.New("offline")})
 	m = next.(model)
-	if cmd != nil || m.appUpdateLine() == "" || !m.appUpdate.installing || updater.installed != 0 {
-		t.Fatal("toggle during update changed operation")
+	next, cmd := m.handleKey("x")
+	m = next.(model)
+	if cmd == nil || !m.appUpdate.checking || !m.appUpdate.updateMode || m.appUpdate.installing || updater.installed != 0 {
+		t.Fatal("manual mode must fetch a valid offer before installing")
 	}
 }
 
@@ -164,7 +230,7 @@ func TestBannerToggleOnlyOnNodesAndNotInHints(t *testing.T) {
 		}
 		next, _ := current.handleKey("x")
 		current = next.(model)
-		if current.appUpdate.hidden {
+		if current.appUpdate.updateMode {
 			t.Fatalf("x toggled banner on %s", screen)
 		}
 		if screen == "shell" && current.shell.input != "x" {

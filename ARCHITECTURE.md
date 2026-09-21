@@ -82,6 +82,12 @@ Any different version is offered, including
 a lower version. `u` installs the exact OS/architecture artifact from `dist/`;
 unsupported platforms never fall back to another binary. Downloads have a
 five-minute timeout and 128 MiB limit; the manifest is limited to 1 MiB.
+An up-to-date check leaves only the current application and firmware versions
+in the banner. Update mode appends `Update <remote-version> · Press u to update`.
+The hidden Nodes `x` key toggles this mode for the session; `u` in manual mode
+uses the checked remote artifact even when its version matches the running app.
+Without a successful check, manual mode must fetch the manifest first. Toggling
+is disabled during installation; all USB guards and restart behavior still apply.
 
 `selfupdate.ExecutableInstaller` resolves the executable path, stages beside it,
 finishes the bounded download, syncs the file, and retains a

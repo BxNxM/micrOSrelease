@@ -8,11 +8,11 @@ import (
 )
 
 func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
-	if key == "x" && m.showNodes && !m.showNodeDetails && !m.showFirmware && !m.shell.visible {
-		return m.toggleAppUpdateBanner()
-	}
 	if m.appUpdate.installing {
 		return m.selfUpdateKey(key)
+	}
+	if key == "x" && m.showNodes && !m.showNodeDetails && !m.showFirmware && !m.shell.visible {
+		return m.toggleAppUpdateMode()
 	}
 	if m.shell.visible {
 		return m.shellKey(key)

@@ -104,8 +104,10 @@ func (s *SelfUpdater) Check(ctx context.Context) (UpdateOffer, error) {
 }
 
 func (s *SelfUpdater) Install(ctx context.Context, offer UpdateOffer, emit func(int)) (string, error) {
-	comparison, err := CompareReleaseVersions(offer.Version, s.CurrentVersion)
-	if err != nil || comparison == 0 || !offer.Available || offer.Platform != s.platform() || offer.Asset.Path != "dist/"+BinaryName(s.platform()) {
+	// Availability controls automatic offers; an explicit install may reinstall
+	// the current version using the same validated platform and download path.
+	_, err := CompareReleaseVersions(offer.Version, s.CurrentVersion)
+	if err != nil || offer.Platform != s.platform() || offer.Asset.Path != "dist/"+BinaryName(s.platform()) {
 		return "", fmt.Errorf("invalid update offer")
 	}
 	if s.Installer == nil {

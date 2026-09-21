@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -63,9 +65,6 @@ func TestUpdateSelectsPlatformAndOffersAnyDifferentVersion(t *testing.T) {
 				if installer.calls != 0 || downloaded != "" {
 					t.Fatal("check installed without key press")
 				}
-				if !offer.Available {
-					return
-				}
 				last := -1
 				backup, err := updater.Install(context.Background(), offer, func(p int) {
 					if p < last {
@@ -78,6 +77,45 @@ func TestUpdateSelectsPlatformAndOffersAnyDifferentVersion(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestSameVersionInstallDownloadsAndReplacesExecutable(t *testing.T) {
+	var manifest []byte
+	downloads := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/MANIFEST.yaml":
+			w.Write(manifest)
+		case "/dist/microsctl-linux-amd64":
+			downloads++
+			io.WriteString(w, "replacement payload")
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	manifest, _ = yaml.Marshal(testReleaseManifest(server.URL + "/"))
+	target := filepath.Join(t.TempDir(), "microsctl")
+	if err := os.WriteFile(target, []byte("original payload"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	updater := &SelfUpdater{CurrentVersion: "0.2.0", Platform: "linux-amd64", URL: server.URL + "/", Client: server.Client(), Installer: ExecutableInstaller{Path: target}}
+	offer, err := updater.Check(context.Background())
+	if err != nil || offer.Available || downloads != 0 {
+		t.Fatalf("check offer=%+v downloads=%d error=%v", offer, downloads, err)
+	}
+	backup, err := updater.Install(context.Background(), offer, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	installed, err := os.ReadFile(target)
+	if err != nil || string(installed) != "replacement payload" || downloads != 1 {
+		t.Fatalf("installed=%q downloads=%d error=%v", installed, downloads, err)
+	}
+	previous, err := os.ReadFile(backup)
+	if err != nil || string(previous) != "original payload" {
+		t.Fatalf("backup=%q error=%v", previous, err)
 	}
 }
 
