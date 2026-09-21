@@ -62,11 +62,19 @@ func NodeDetailsView(m widgets.State) tea.View {
 		}
 	}
 	fmt.Fprintf(&b, "\n%-10s %s\n", "Web UI", link)
-	remove := "  🗑 Remove device"
-	if node.SpecialEndpoint() != "" {
-		remove = "  Hide until next scan"
+	shell := "-"
+	if node.Online {
+		shell = widgets.Clean(node.Address)
+		if m.DetailAction == 1 {
+			shell = widgets.StyleSelected.Render("› " + shell)
+		}
 	}
-	if m.DetailAction == 1 {
+	fmt.Fprintf(&b, "%-10s %s\n", "Shell", shell)
+	remove := "➖  Remove device"
+	if node.SpecialEndpoint() != "" {
+		remove = "Hide until next scan"
+	}
+	if m.DetailAction == 2 {
 		remove = widgets.StyleSelected.Render("› " + strings.TrimSpace(remove))
 	}
 	b.WriteString("\n" + remove + "\n")

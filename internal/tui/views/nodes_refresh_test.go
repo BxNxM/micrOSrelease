@@ -40,3 +40,21 @@ func TestNetworkActivityKeepsGridPosition(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateStatusHasStableTopRow(t *testing.T) {
+	state := widgets.State{Width: 100, Height: 30}
+	row := -1
+	for _, line := range []string{"Checking for updates…", "u update & restart · microsctl 0.1.0 → 0.2.0", "Updating microsctl… 50%", "Update check unavailable · u retry"} {
+		state.AppUpdateLine = line
+		text := ansi.Strip(NodesView(state).Content)
+		lines := strings.Split(text, "\n")
+		if lines[1] != line {
+			t.Fatalf("not on top status line: %s", text)
+		}
+		current := strings.Count(text[:strings.Index(text, "USB Tools")], "\n")
+		if row >= 0 && row != current {
+			t.Fatal("update status moved grid")
+		}
+		row = current
+	}
+}

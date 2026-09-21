@@ -7,7 +7,11 @@ func (m State) NodeGrid() (width, columns, rows int) {
 	}
 	// Compact cards fit two feature flags per line.
 	columns = max(1, (width+1)/33)
-	rows = max(1, (m.Height-10)/6)
+	header := 10
+	if m.AppUpdateLine != "" {
+		header++
+	}
+	rows = max(1, (m.Height-header)/6)
 	return
 }
 

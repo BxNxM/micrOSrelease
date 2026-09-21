@@ -43,3 +43,28 @@ func TestNodeAuthFeatures(t *testing.T) {
 		}
 	}
 }
+
+func TestDeviceDetailsShellAvailability(t *testing.T) {
+	for _, online := range []bool{false, true} {
+		for _, selected := range []int{0, 1} {
+			state := widgets.State{Width: 80, Height: 30, NodeIndex: 1, DetailAction: selected, Nodes: []network.Device{{Name: "node", Address: "192.168.1.2:9008", Online: online}}}
+			want := "-"
+			if online {
+				want = "192.168.1.2:9008"
+				if selected == 1 {
+					want = "› " + want
+				}
+			}
+			text := ansi.Strip(NodeDetailsView(state).Content)
+			found := false
+			for _, line := range strings.Split(text, "\n") {
+				if strings.TrimRight(line, " ") == fmt.Sprintf("%-10s %s", "Shell", want) {
+					found = true
+				}
+			}
+			if !found {
+				t.Fatalf("online=%v selected=%d: %s", online, selected, text)
+			}
+		}
+	}
+}

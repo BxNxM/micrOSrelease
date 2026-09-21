@@ -8,6 +8,7 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.7
 	go.bug.st/serial v1.8.0
 	golang.org/x/sys v0.46.0
+	gopkg.in/yaml.v3 v3.0.1
 	tinygo.org/x/espflasher v0.8.1
 )
 

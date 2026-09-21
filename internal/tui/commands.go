@@ -52,7 +52,7 @@ type cachedNodesMsg struct {
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(m.inventoryCmd(), autoRefreshCmd(), func() tea.Msg {
+	return tea.Batch(m.inventoryCmd(), autoRefreshCmd(), m.checkAppUpdateCmd(), func() tea.Msg {
 		if source, ok := m.network.(interface {
 			Cached() ([]network.Device, error)
 		}); ok {

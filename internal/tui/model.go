@@ -25,8 +25,10 @@ const (
 )
 
 type model struct {
-	usb     usb.Manager
-	network network.Discoverer
+	appUpdate appUpdateState
+	shell     shellState
+	usb       usb.Manager
+	network   network.Discoverer
 
 	width  int
 	height int
@@ -84,12 +86,16 @@ var actions = []struct {
 }
 
 // New creates the UI and injects all feature implementations.
-func New(usbManager usb.Manager, networkDiscoverer network.Discoverer) model {
-	return model{
+func New(usbManager usb.Manager, networkDiscoverer network.Discoverer, options ...Option) model {
+	m := model{
 		usb:              usbManager,
 		network:          networkDiscoverer,
 		loadingInventory: true,
 		showNodes:        true,
 		status:           "Loading release environment…",
 	}
+	for _, option := range options {
+		option(&m)
+	}
+	return m
 }

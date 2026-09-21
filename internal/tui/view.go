@@ -12,6 +12,15 @@ func (m model) renderState() widgets.State {
 		titles = append(titles, item.title)
 	}
 	return widgets.State{
+		AppUpdateLine:    m.appUpdateLine(),
+		ShellCommands:    m.shell.commands,
+		ShellScroll:      m.shell.scroll,
+		ShellReady:       !m.shell.busy && m.shell.session != nil,
+		ShellPrompt:      m.shell.prompt,
+		ShellAddress:     m.shell.node.Name + " · " + m.shell.node.Address,
+		ShellInput:       m.shell.input,
+		ShellOutput:      m.shell.output + m.shell.stream,
+		ShellStatus:      m.shell.status,
 		Width:            m.width,
 		Height:           m.height,
 		Cursor:           m.cursor,
@@ -45,6 +54,9 @@ func (m model) renderState() widgets.State {
 
 func (m model) View() tea.View {
 	state := m.renderState()
+	if m.shell.visible {
+		return views.ShellView(state)
+	}
 	if m.showFirmware {
 		return views.FirmwareView(state)
 	}

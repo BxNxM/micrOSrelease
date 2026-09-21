@@ -127,7 +127,7 @@ func TestHideSpecialCardAlsoHidesLANAlias(t *testing.T) {
 	m := model{}
 	m.applyNetworkDevice(lan)
 	m.applyNetworkDevice(local)
-	m.nodeIndex, m.showNodeDetails, m.detailAction = 1, true, 1
+	m.nodeIndex, m.showNodeDetails, m.detailAction = 1, true, 2
 	updated, cmd := m.deviceDetailsKey("enter")
 	if cmd == nil {
 		t.Fatal("hide did not return a command")

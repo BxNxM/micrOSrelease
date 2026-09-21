@@ -11,6 +11,18 @@ import (
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case updateCheckedMsg:
+		return m.handleUpdateChecked(msg)
+	case appUpdateMsg:
+		return m.handleAppUpdate(msg)
+	case shellOpenedMsg:
+		return m.handleShellOpened(msg)
+	case shellReplyMsg:
+		return m.handleShellReply(msg)
+	case tea.PasteMsg:
+		if m.shell.visible {
+			m.appendShellInput(msg.Content)
+		}
 	case removeDeviceMsg:
 		m.removingUID = ""
 		if msg.err != nil {

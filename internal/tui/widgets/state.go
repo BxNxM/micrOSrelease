@@ -10,6 +10,13 @@ import (
 // State is a read-only rendering snapshot. Widgets never perform I/O or update
 // application state; the tui package owns those responsibilities.
 type State struct {
+	AppUpdateLine                                      string
+	ShellCommands                                      []ShellCommand
+	ShellScroll                                        int
+	ShellReady                                         bool
+	ShellAddress, ShellInput, ShellOutput, ShellStatus string
+	ShellPrompt                                        string
+
 	Width, Height, Cursor                          int
 	Inventory                                      usb.Inventory
 	DeviceIndex, ImageIndex, FirmwareIndex         int

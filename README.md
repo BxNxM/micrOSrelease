@@ -1,19 +1,15 @@
 # microsctl
 
-> Current custom micropython binaries don't have binary OTA update support -- comming-soon
+Discover [micrOS](https://github.com/BxNxM/micrOS) nodes, run commands, and install
+or update ESP boards over USB from one terminal app. Firmware and resources are
+bundled; no Python setup is needed.
 
 ![ESP32 verified target](https://img.shields.io/badge/ESP32-verified-brightgreen)
 ![ESP32-C6 verified target](https://img.shields.io/badge/ESP32--C6-verified-brightgreen)
 ![ESP32-S3 verified target](https://img.shields.io/badge/ESP32--S3-verified-brightgreen)
 ![ESP32-C3 verified target](https://img.shields.io/badge/ESP32--C3-verified-brightgreen)
-![ESP32-S3-Octo verified target](https://img.shields.io/badge/ESP32--S3--Octo-comming--soon-yellow)
+![ESP32-S3-Octo verified target](https://img.shields.io/badge/ESP32--S3--Octo-coming--soon-yellow)
 ![ESP32-S31 verified target](https://img.shields.io/badge/ESP32--S31-tbd-yellow)
-
-[micrOS](https://github.com/BxNxM/micrOS) is a local-first automation platform for Wi-Fi-enabled MicroPython boards.
-
-Build a network-controlled lamp, read a sensor over Socket/HTTP, or let one board trigger another. micrOS turns a compatible Wi-Fi microcontroller into a programmable automation node—without a required cloud service.
-
-> A standalone terminal app for discovering micrOS nodes and installing or updating ESP boards over USB. Native Go, with firmware and resources bundled into one executable;
 
 ![microsctl TUI](media/TUI.png)
 
@@ -23,124 +19,98 @@ Run in the directory where you want the executable:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/BxNxM/micrOSrelease/main/dist/install.sh | sh
-
 ./microsctl
 ```
 
-Prebuilt binaries support macOS ARM64, Linux x64, Linux ARM64 (including Raspberry
-Pi running 64-bit Raspberry Pi OS), and Windows x64. The installer automatically
-selects the matching binary. Raspberry Pi requires a 64-bit OS; 32-bit ARM is not
-supported. On Windows, run the installer in Git Bash, MSYS2, or Cygwin, then use
-`./microsctl.exe`.
+Supports macOS ARM64, Linux x64/ARM64 (including 64-bit Raspberry Pi OS), and
+Windows x64. On Windows, run the installer in Git Bash, MSYS2, or Cygwin, then
+start `./microsctl.exe`.
 
-### Advanced
+## Update microsctl
 
-To build from a checkout, use Go 1.25 or newer:
+The top line checks GitHub for a different microsctl version. Press **u** when
+an update is offered to install the binary for your platform and restart
+automatically. **Esc** cancels a download; **u** retries a failed check or update.
+Your current command-line settings are kept.
+
+## Find and use nodes
+
+Use the arrow keys to select a card and **Enter** for details. **r** refreshes;
+scans also run every five minutes. Saved nodes appear immediately, while
+localhost and AP mode nodes appear when reachable.
+
+In details, open **Web UI** (**o**), choose **Shell**, or remove the node from the
+local cache. Removing a node does not erase it; a later scan can rediscover it.
+Shell shows `-` for offline nodes.
+
+In **Shell**, type a command and press **Enter**. Replies stream as they arrive;
+the bold prompt means the node is ready again. Enter your password when asked.
+
+| Key | Action |
+| --- | --- |
+| **↑ / ↓** | Recall commands from this session; passwords are excluded. |
+| **← / →** | Scroll older/newer output. |
+| **Ctrl+U** | Clear the input. |
+| **Esc**, **Ctrl+C**, or `exit` | Close Shell and return to details. |
+
+To reconnect after an error, leave Shell and open it again.
+Outside Shell, **Esc** goes back and **q** quits when idle.
+
+## Install or update over USB
+
+1. Connect the board and open **USB Tools**.
+2. Choose **Discovery** to identify the board and select matching firmware.
+   This resets the board. **USB Scan** only lists ports.
+3. Check the device, board, and firmware. **[ / ]** switches devices;
+   **← / →** switches boards; **f** opens the firmware picker.
+4. Choose **Install micrOS** or **Update micrOS**, then confirm with **y** or
+   **Enter**. **n** or **Esc** cancels the confirmation.
+
+**Install erases the device.** **Update preserves configuration and user files**,
+while replacing bundled files. Before reflashing, Update saves a verified
+filesystem backup. Backup failures or size limits (1 MiB/file, 64 MiB total)
+stop the update before erase. Keep the backup until you have checked the board.
+Binary OTA firmware updates are not yet supported.
+
+Start Update with MicroPython running normally. For Install on some native-USB
+boards, hold **BOOT** while connecting to enter programming mode. After flashing,
+release BOOT and reconnect normally when prompted. Keep USB connected otherwise.
+
+At **Reconnect to MicroPython REPL**, the app waits for the board and resumes
+without reflashing; **Ctrl+C** cancels and exits. Reconnect to the same physical
+USB socket on macOS. On other systems, use the original port unless the board
+has a stable USB serial identity.
+
+If an operation fails, follow the error shown in its panel. If only the final
+reset fails after files are verified, reboot normally without holding BOOT;
+another install is not needed.
+
+## Settings and backups
 
 ```sh
+./microsctl --cidr 10.0.1.0/24  # Choose an IPv4 scan range (/24 or smaller)
+./microsctl --data-dir ./data   # Choose where to store cache and backups
+MICROS_PASSWORD='your-password' ./microsctl  # Identify protected nodes during scans
+./microsctl --list-assets      # List bundled firmware and files
+```
+
+Shell asks for passwords interactively, without autofill. By default, cache and backups
+live in the platform's user configuration directory under `microsctl`
+(on macOS: `~/Library/Application Support/microsctl`). Backups are in `backups/`
+and may contain credentials; keep them private.
+
+For development, asset refreshes, and tests, see [ARCHITECTURE.md](ARCHITECTURE.md).
+Coding-agent guidance and behavior to preserve are in [AGENTS.md](AGENTS.md).
+
+## Build from source
+
+With Go 1.25 or newer installed, run:
+
+```sh
+git clone https://github.com/BxNxM/micrOSrelease.git
+cd micrOSrelease
 go build -o microsctl .
 ./microsctl
 ```
 
-Optional settings (shell examples):
-
-```sh
-./microsctl --cidr 10.0.1.0/24  # Explicit IPv4 scan range: /24 or smaller
-./microsctl --data-dir ./data   # Portable cache and backups
-MICROS_PASSWORD='your-password' ./microsctl  # Password-protected nodes
-./microsctl --list-assets      # List bundled firmware and resources, then exit
-```
-
-## Find and use nodes
-
-**Nodes** is the home screen. Use arrows to select a card and **Enter** for
-details. Cards show identity, address, availability, version, mode, latency,
-and WEBUI/ESPNOW/AUTH/CRON/TIMIRQ flags; unknown values appear as `n/a`.
-Online nodes appear before offline nodes; USB Tools stays first.
-In details, open **Web UI** (or press **o**) when enabled, or remove a node
-from the local cache. A later scan can rediscover it.
-
-Saved nodes appear immediately, marked **saved**, while a background scan checks
-TCP port 9008. Scans repeat every five minutes; **r** refreshes manually.
-A fixed status line shows scan progress, then the last successful refresh time.
-Automatic discovery checks active private IPv4 networks, capped to /24 per
-interface. Protected nodes need `MICROS_PASSWORD` to be identified.
-
-**localhost** (`127.0.0.1:9008`) and **AP mode** (`192.168.4.1:9008`) are also
-checked on every scan, regardless of the LAN range. Both use blue cards and appear
-only when reachable. The same node at multiple addresses appears once. Web UI uses
-`http://<node-name>.local` for LAN nodes and the local/AP address for special cards.
-
-## Install or update over USB
-
-1. Connect the board and open **USB Tools** from the Nodes screen.
-2. Run **Discovery** to identify connected boards and select the latest matching
-   bundled firmware. This resets boards. **USB Scan** only lists ports.
-3. Check the selected USB device, board, and firmware. Use **[ / ]** to switch
-   devices, **← / →** to switch boards, and **f** to choose firmware.
-4. Choose **Install micrOS** or **Update micrOS**, then confirm with **y** or
-   **Enter**; **n** or **Esc** cancels the confirmation.
-
-Discovery shows flash capacity in MB (or KB); unavailable capacity appears as **Unknown**.
-Firmware cards list newer micrOS versions first and highlight the version in the
-theme's mint accent color. Matching micrOS versions show newer MicroPython first.
-
-Some native-USB boards need **BOOT held while connecting USB** to expose their
-programming port. Use that port for Install. After flashing, release BOOT and
-reconnect/reboot normally when the app reaches **Reconnect to MicroPython REPL**;
-it then copies the bundled files. Boards with automatic reset follow the same flow.
-
-**Install micrOS erases the selected device** and copies the bundled resources.
-**Update micrOS** preserves configuration and user files, while replacing files
-at bundled resource destinations. Before replacing firmware, it saves a verified
-filesystem ZIP to the host. Backup failures or limits (1 MiB per file, 64 MiB
-total) stop the update before erase. When chip and both micrOS/MicroPython
-versions already match, update refreshes resources without reflashing.
-Update must start with MicroPython running normally so it can back up your files.
-If the required bootloader transition fails, it stops before erase and reports
-the backup path; it never falls back to a clean install. Boards that require
-manual mode changes may not support Update yet.
-During bundled file uploads, one updating line shows the current file and its
-position in the upload list, for example `Uploading 3/42 · /modules/LM_system.mpy`.
-The firmware stage also shows its current step: bootloader connection, erase,
-write/verification with transfer percentage, and reset.
-Failures remain in the **Install** or **Update** panel with the failed stage and
-full error, including the affected file or backup path when available. If you leave
-a running operation, a failure reopens its panel so you can review those details.
-If only the final reset fails after all files are verified, reboot normally without
-holding BOOT; another install is not required.
-
-During **Reconnect to MicroPython REPL**, you may unplug/reconnect USB and leave
-the operation open; it resumes without flashing again. On macOS, keep the cable
-on the same physical USB socket: reconnect follows it even if firmware changes
-both the serial identity and port name. On other hosts, a stable USB serial
-identity allows a different port; without one, the original port is required.
-The reconnect detail shows the new port when it appears. This stage waits
-indefinitely by default; **Ctrl+C** cancels and exits.
-Keep USB connected during flashing and file transfers.
-
-Use **↑ / ↓** to choose an action or firmware, **Enter** to select, **Esc** to
-go back, and **q** to quit when idle.
-USB Tools and the firmware browser share bordered board tabs; **← / →** changes
-the selected board, indicated by its highlighted border.
-In USB Tools, changing boards selects and previews the newest matching firmware.
-In the **f** browser, arrows only browse; **Enter** replaces the current selection
-and **Esc** keeps it, including a firmware selected by Discovery.
-Returning to Nodes after Install or Update automatically refreshes network
-discovery, just like **r**. If USB work is still running, it refreshes when that
-operation finishes.
-
-## Data and backups
-
-Data lives in the platform user configuration directory under `microsctl`
-(macOS: `~/Library/Application Support/microsctl`), or in `--data-dir`:
-
-- `devices.json`: last-known node observations.
-- `backups/`: timestamped configuration snapshots and pre-flash filesystem ZIPs.
-- `firmware/`: reserved; firmware download/import is not implemented.
-
-Backups can contain node credentials and are created with private permissions.
-Keep them until you have verified the updated device. To change bundled firmware
-or resources, rebuild the app; see [Architecture](ARCHITECTURE.md) for asset
-refresh, implementation, and development checks. [AGENTS.md](AGENTS.md) records
-the repository's coding and structure rules.
+On Windows, build with `go build -o microsctl.exe .` and run `./microsctl.exe`.

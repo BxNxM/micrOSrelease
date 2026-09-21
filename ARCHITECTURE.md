@@ -11,11 +11,12 @@ and TCP discovery run natively in Go. See [README.md](README.md) for usage and
 | --- | --- |
 | `main.go` | Composition root: flags, storage, embedded assets, services, TUI. |
 | `internal/tui/` | Model, event handling, navigation, asynchronous commands. |
-| `internal/tui/views/*_view.go` | Compose the Nodes, details, USB actions, and firmware screens. |
+| `internal/tui/views/*_view.go` | Compose Nodes, details, Shell, USB actions, and firmware screens. |
 | `internal/tui/widgets/*_widget.go` | Reusable rendering; `state.go` holds the rendering snapshot, `styles.go` the styles. |
 | `internal/usb/` | Inventory, board/image selection, ESP probing, install/update orchestration, backups, reconnect. |
 | `internal/micropython/` | Raw/raw-paste REPL, runtime inspection, verified file transfer, watchdog maintenance. |
-| `internal/network/` | Authenticated TCP client, discovery/status, endpoint identity and Web UI URLs. |
+| `internal/network/` | TCP discovery, interactive sessions, prompt framing, identity and Web UI URLs. |
+| `internal/network/self_update/` | Application release manifest, downloads, executable replacement, and restart. |
 | `internal/storage/` | Host data directory and versioned device cache. |
 | `storage/` | Read-only embedded firmware, board configuration, modules, and web files. |
 | `scripts/`, `dist/` | Asset refresh script, installer, and platform binaries. |
@@ -33,6 +34,20 @@ context cancellation. `*_navigation.go` owns screen-specific keys and transition
 `view.go` builds `widgets.State` and routes to views. Views and widgets treat this
 snapshot as read-only and receive no services.
 
+Shell uses the optional `network.ShellConnector` interface and a persistent TCP
+client. `client.go` handles prompt framing and cumulative response snapshots;
+`shell.go` adds interactive authentication and UID verification. Discovery uses
+a three-second timeout; Shell uses a 20-second inactivity timeout and a strict
+1 MiB response limit. Close messages are classified at EOF, not TCP read boundaries.
+`exit` sends once and closes without awaiting a reply.
+
+TUI Shell commands stream through cancellable channels. Session generations
+reject late replies and close late connections. The model retains up to 100
+commands and 64 KiB of completed transcript in memory. A shared wrapped-line
+layout supports scrollback; byte ranges identify local command echoes so styling
+survives wrapping and trimming without interpreting server text as UI markup.
+See [AGENTS.md](AGENTS.md) for Shell behavior to preserve.
+
 Startup loads cached nodes, inventories USB ports/assets, and begins network
 discovery. A single five-minute timer chain refreshes nodes without overlapping
 scans. Returning from a finished USB install/update triggers the manual-refresh
@@ -43,6 +58,40 @@ version and feature flags. It checks configured/private IPv4 ranges, saved
 addresses, localhost, and AP mode. Observations merge by UID; reachable special
 endpoints take precedence over LAN aliases and are never displayed from cache
 alone. Cache writes use a temporary file, sync, and rename.
+
+## Application releases and self-update
+
+`MANIFEST.yaml` is the single source of the microsctl version and is embedded
+by `go build`. `--version` prints it without starting services.
+`make build` refreshes manifest platform paths and the latest informational micrOS
+version before building all four `dist/` executables. `make manifest` refreshes
+that metadata alone, preserving the microsctl version and without inspecting
+binary contents. Change `microsctl.version` in the manifest for each release;
+publish the manifest and matching `dist/` binaries together.
+
+`microsctl.url` in `MANIFEST.yaml` is the sole release URL, including the branch
+and trailing `/` (for example, `https://raw.githubusercontent.com/BxNxM/micrOSrelease/main/`).
+The build embeds it and `make manifest` preserves manual edits. Startup fetches
+`<url>MANIFEST.yaml` with a 10-second timeout. The fetched manifest's `url` is
+used with the selected binary's `path`, so newer manifests can move downloads
+to another repository, branch, or host. Requests use the latest branch contents;
+there is no commit lookup or pinning. Editing the local manifest takes effect
+in the next build.
+
+Any different version is offered, including
+a lower version. `u` installs the exact OS/architecture artifact from `dist/`;
+unsupported platforms never fall back to another binary. Downloads have a
+five-minute timeout and 128 MiB limit; the manifest is limited to 1 MiB.
+
+`selfupdate.ExecutableInstaller` resolves the executable path, stages beside it,
+finishes the bounded download, syncs the file, and retains a
+`.microsctl-backup-*` copy before replacement. Unix replaces by rename; Windows
+moves the running image aside and restores it if the replacement rename fails.
+Windows may retain a `.running.exe` file until the old process exits. TUI update
+commands stream progress, block navigation/USB work, and wait for cancellation
+before quitting. Successful installation exits Bubble Tea, then restarts with
+the original arguments, environment, and working directory. Restart uses `exec`
+on Unix and a child process on Windows. A failed restart prints the path to run.
 
 ## USB lifecycle and preservation
 

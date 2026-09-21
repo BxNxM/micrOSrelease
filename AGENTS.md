@@ -2,7 +2,9 @@
 
 Read [README.md](README.md) for user workflows and [ARCHITECTURE.md](ARCHITECTURE.md)
 for implementation boundaries. Verify behavior against code; keep all three
-documents compact and update the relevant one when behavior changes.
+documents compact and update the relevant one when behavior changes. Keep README
+limited to setup, everyday controls, and essential recovery guidance; put design
+details in ARCHITECTURE and coding-agent constraints here.
 
 ## Structure
 
@@ -31,6 +33,42 @@ documents compact and update the relevant one when behavior changes.
 - Use `make mr` only for requested asset refreshes; it copies from an external
   micrOS checkout. Rebuild `dist/` binaries only when distribution changes are
   requested. Consult the two `storage/` READMEs before changing release layouts.
+
+## Shell behavior to preserve
+
+- Device details lists Shell below Web UI as `IP:port`; offline nodes show `-`
+  and cannot open Shell. Default to Shell when no Web UI URL is available.
+- Authenticate interactively with masked input; never autofill the discovery
+  password or retain password submissions in history. Verify UID after login.
+- Stream replies immediately; only a complete trailing node prompt enables the
+  next command. Track `[password]` / `[configure]` prefixes and retain partial
+  output on failure. Do not retry user commands automatically.
+- `exit` sends before disconnecting; Esc/Ctrl+C disconnect and return to details.
+  Keep cancellation and stale-session guards; rendering never accesses a client.
+- Up/Down recalls session-only commands and restores the draft; Left/Right scrolls
+  output, including during replies. New commands return to the latest output.
+- Preserve bold prompts, normal command text, grey responses, and blue status
+  through scrollback and wrapping. Sanitize server terminal controls and retain
+  bounded history/transcripts; never persist them without an explicit request.
+
+## Application update invariants
+
+- Check releases in the background; install only after `u` on Nodes. Offer any
+  different microsctl version, and never select a fallback OS/architecture.
+- Nodes has a hidden `x` display-test toggle for the update banner. Keep it out
+  of user hints/README; it only changes visibility for the running session.
+- Root `MANIFEST.yaml` is the sole application version source. Bump its
+  microsctl version for releases; publish it with matching `dist/` builds.
+- Keep the release URL (including branch) in `microsctl.url` in `MANIFEST.yaml`
+  and preserve it during generation. Use the fetched manifest's URL for downloads;
+  fetch latest branch contents without commit lookup or pinning.
+- Self-update concerns only microsctl; bundled firmware metadata is informational.
+  Do not validate binary hashes or executable formats. Keep bounded downloads,
+  backup and rollback on replacement failure. Never self-update during USB work
+  or restart before update completion and terminal cleanup.
+- Preserve arguments/environment/working directory on restart. Test using local
+  HTTP fixtures and temporary executables; never replace the developer's tool or
+  publish GitHub changes as part of routine tests.
 
 ## Checks
 

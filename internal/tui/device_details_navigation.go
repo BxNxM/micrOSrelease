@@ -19,9 +19,9 @@ func (m model) deviceDetailsKey(key string) (tea.Model, tea.Cmd) {
 	case "q":
 		return m, tea.Quit
 	case "up", "k":
-		m.detailAction = 0
+		m.detailAction = max(0, m.detailAction-1)
 	case "down", "j":
-		m.detailAction = 1
+		m.detailAction = min(2, m.detailAction+1)
 	case "enter", "space", "o":
 		if m.nodeIndex <= 0 || m.nodeIndex > len(m.nodes) || m.removingUID != "" {
 			return m, nil
@@ -32,6 +32,12 @@ func (m model) deviceDetailsKey(key string) (tea.Model, tea.Cmd) {
 				return m, openBrowserCmd(url)
 			}
 			return m, nil
+		}
+		if m.detailAction == 1 {
+			if !node.Online {
+				return m, nil
+			}
+			return m.openShell(node)
 		}
 		m.removingUID = node.CardKey()
 		if node.SpecialEndpoint() != "" {

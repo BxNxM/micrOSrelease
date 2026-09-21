@@ -8,6 +8,15 @@ import (
 )
 
 func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
+	if key == "x" && m.showNodes && !m.showNodeDetails && !m.showFirmware && !m.shell.visible {
+		return m.toggleAppUpdateBanner()
+	}
+	if m.appUpdate.installing {
+		return m.selfUpdateKey(key)
+	}
+	if m.shell.visible {
+		return m.shellKey(key)
+	}
 	if (key == "ctrl+c" || key == "q") && m.scanCancel != nil {
 		m.scanCancel()
 	}
@@ -25,6 +34,8 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 			return m.deviceDetailsKey(key)
 		}
 		switch key {
+		case "u":
+			return m.requestAppUpdate()
 		case "enter", "space":
 			if m.nodeIndex == 0 {
 				m.showNodes = false
@@ -33,6 +44,9 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 			} else if m.nodeIndex <= len(m.nodes) {
 				m.showNodeDetails = true
 				m.detailAction = 0
+				if m.nodes[m.nodeIndex-1].WebUIURL() == "" {
+					m.detailAction = 1
+				}
 			}
 		case "q":
 			if m.operationCancel != nil {
