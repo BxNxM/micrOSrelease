@@ -25,6 +25,9 @@ func TestExecutableInstallKeepsBackup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if filepath.Base(backup) != ".microsctl-backup" {
+		t.Fatalf("unexpected backup path: %s", backup)
+	}
 	old, err := os.ReadFile(backup)
 	if err != nil || string(old) != "previous executable" {
 		t.Fatal("backup not retained", err)
@@ -45,11 +48,78 @@ func TestExecutableInstallKeepsBackup(t *testing.T) {
 	}
 }
 
+func TestRepeatedUpdatesKeepOnlyPreviousExecutable(t *testing.T) {
+	directory, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(directory, "microsctl")
+	if err := os.WriteFile(target, []byte("version 1"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	for version := 2; version <= 4; version++ {
+		if runtime.GOOS == "windows" {
+			// Simulate an image left behind by an exited Windows process.
+			if err := os.WriteFile(filepath.Join(directory, ".microsctl-backup.running.exe"), []byte("old image"), 0755); err != nil {
+				t.Fatal(err)
+			}
+		}
+		payload := fmt.Sprintf("version %d", version)
+		backup, err := (ExecutableInstaller{Path: target}).Install(context.Background(), strings.NewReader(payload))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if backup != filepath.Join(directory, ".microsctl-backup") {
+			t.Fatalf("unexpected backup path: %s", backup)
+		}
+		previous, err := os.ReadFile(backup)
+		if err != nil || string(previous) != fmt.Sprintf("version %d", version-1) {
+			t.Fatalf("backup=%q error=%v", previous, err)
+		}
+		installed, err := os.ReadFile(target)
+		if err != nil || string(installed) != payload {
+			t.Fatalf("installed=%q error=%v", installed, err)
+		}
+		files, err := os.ReadDir(directory)
+		if err != nil || len(files) != 2 {
+			t.Fatalf("updates accumulated files: %v error=%v", files, err)
+		}
+	}
+}
+
+func TestCancelledBackupPreservesPreviousCopy(t *testing.T) {
+	directory := t.TempDir()
+	target := filepath.Join(directory, "microsctl")
+	backup := filepath.Join(directory, ".microsctl-backup")
+	for path, content := range map[string]string{target: "current", backup: "previous"} {
+		if err := os.WriteFile(path, []byte(content), 0755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := backupExecutable(ctx, target, 0755); err != context.Canceled {
+		t.Fatalf("expected cancellation, got %v", err)
+	}
+	previous, err := os.ReadFile(backup)
+	if err != nil || string(previous) != "previous" {
+		t.Fatalf("previous backup changed: %q error=%v", previous, err)
+	}
+	files, err := os.ReadDir(directory)
+	if err != nil || len(files) != 2 {
+		t.Fatalf("temporary backup leaked: %v error=%v", files, err)
+	}
+}
+
 func TestRejectedDownloadsLeaveExecutableUntouched(t *testing.T) {
 	for _, kind := range []string{"empty", "error", "cancel"} {
 		t.Run(kind, func(t *testing.T) {
 			target := filepath.Join(t.TempDir(), "microsctl")
 			os.WriteFile(target, []byte("old"), 0755)
+			backup := filepath.Join(filepath.Dir(target), ".microsctl-backup")
+			if err := os.WriteFile(backup, []byte("previous"), 0755); err != nil {
+				t.Fatal(err)
+			}
 			var source io.Reader = strings.NewReader("download")
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -69,8 +139,12 @@ func TestRejectedDownloadsLeaveExecutableUntouched(t *testing.T) {
 				t.Fatal("current binary changed")
 			}
 			files, _ := os.ReadDir(filepath.Dir(target))
-			if len(files) != 1 {
+			if len(files) != 2 {
 				t.Fatal("temporary files leaked")
+			}
+			previous, err := os.ReadFile(backup)
+			if err != nil || string(previous) != "previous" {
+				t.Fatalf("previous backup changed: %q error=%v", previous, err)
 			}
 		})
 	}

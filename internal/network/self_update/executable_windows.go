@@ -10,6 +10,10 @@ func replaceExecutable(staged, target, backup string) error {
 	// Windows permits moving the running image but cannot overwrite it in place.
 	// The durable copy remains available even if restoring the moved image fails.
 	moved := backup + ".running.exe"
+	// Reuse the same path after the previous process has released its image.
+	if err := os.Remove(moved); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("remove previous running image: %w", err)
+	}
 	if err := os.Rename(target, moved); err != nil {
 		return err
 	}

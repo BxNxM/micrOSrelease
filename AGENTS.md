@@ -66,8 +66,9 @@ details in ARCHITECTURE and coding-agent constraints here.
   fetch latest branch contents without commit lookup or pinning.
 - Self-update concerns only microsctl; bundled firmware metadata is informational.
   Do not validate binary hashes or executable formats. Keep bounded downloads,
-  backup and rollback on replacement failure. Never self-update during USB work
-  or restart before update completion and terminal cleanup.
+  one `.microsctl-backup` of the previous executable and rollback on replacement
+  failure. Publish a complete backup before replacing the executable. Never
+  self-update during USB work or restart before update completion and terminal cleanup.
 - Preserve arguments/environment/working directory on restart. Test using local
   HTTP fixtures and temporary executables; never replace the developer's tool or
   publish GitHub changes as part of routine tests.

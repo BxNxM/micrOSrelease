@@ -14,8 +14,8 @@ func NodesView(m widgets.State) tea.View {
 	cardWidth := (width - (columns - 1)) / columns
 	var b strings.Builder
 	b.WriteString(widgets.StyleTitle.Render("micrOS / Nodes 📡") + "\n")
-	if m.AppUpdateLine != "" {
-		b.WriteString(ansi.Truncate(widgets.StyleMuted.Foreground(widgets.ColorRelease).Render(widgets.Clean(m.AppUpdateLine)), width, "…") + "\n")
+	for _, line := range m.UpdateBannerLines(width) {
+		b.WriteString(line + "\n")
 	}
 	b.WriteString(widgets.StyleMuted.Render("TCP 9008 · auto-refresh 5 min") + "\n\n")
 	updated := "n/a"

@@ -136,7 +136,7 @@ func (m model) appUpdateLine() string {
 		return line + " · " + m.appUpdate.status
 	}
 	if m.appUpdate.updateMode && m.appUpdate.offer.Version != "" {
-		return line + fmt.Sprintf(" · Update %s · Press u to update", m.appUpdate.offer.Version)
+		return line + fmt.Sprintf(" · Update available %s (Press u to update)", m.appUpdate.offer.Version)
 	}
 	return line
 }

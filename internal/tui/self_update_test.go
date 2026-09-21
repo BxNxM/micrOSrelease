@@ -34,7 +34,7 @@ func TestSelfUpdateNeedsUAndRestartsAfterSuccess(t *testing.T) {
 	m.loadingInventory = false
 	next, _ := m.Update(m.checkAppUpdateCmd()())
 	m = next.(model)
-	if updater.installed != 0 || !strings.Contains(m.appUpdateLine(), "Update 0.2.0 · Press u to update") {
+	if updater.installed != 0 || !strings.Contains(m.appUpdateLine(), "Update available 0.2.0 (Press u to update)") {
 		t.Fatal("check did not offer update")
 	}
 	next, cmd := m.handleKey("u")
@@ -138,7 +138,7 @@ func TestUpdateModeToggleAndSameVersionInstall(t *testing.T) {
 			next, _ := m.Update(updateCheckedMsg{offer: selfupdate.UpdateOffer{Version: "0.2.0", Available: available}})
 			m = next.(model)
 			base := "microsctl " + current + " · micrOS 3.6.3-0"
-			extended := base + " · Update 0.2.0 · Press u to update"
+			extended := base + " · Update available 0.2.0 (Press u to update)"
 			want := base
 			if available {
 				want = extended
@@ -197,7 +197,7 @@ func TestManualUpdateModeSurvivesPendingCheck(t *testing.T) {
 	}
 	next, _ = m.Update(updateCheckedMsg{offer: selfupdate.UpdateOffer{Version: "0.2.0"}})
 	m = next.(model)
-	if !strings.Contains(m.appUpdateLine(), "Update 0.2.0 · Press u to update") {
+	if !strings.Contains(m.appUpdateLine(), "Update available 0.2.0 (Press u to update)") {
 		t.Fatal("check lost manual update mode")
 	}
 }

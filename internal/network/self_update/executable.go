@@ -52,14 +52,12 @@ func (s ExecutableInstaller) Install(ctx context.Context, source io.Reader) (str
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
-	backup, err := backupExecutable(target, current.Mode().Perm())
+	backup, err := backupExecutable(ctx, target, current.Mode().Perm())
 	if err != nil {
 		return "", err
 	}
-	if err = ctx.Err(); err != nil {
-		os.Remove(backup)
-		return "", err
-	}
+	// Once the backup is published, finish replacement even if cancellation
+	// arrives: the fixed backup now contains the executable being replaced.
 	if err = replaceExecutable(file.Name(), target, backup); err != nil {
 		return backup, fmt.Errorf("replace executable (backup: %s): %w", backup, err)
 	}
@@ -78,7 +76,7 @@ func (r *contextReader) Read(p []byte) (int, error) {
 	return r.reader.Read(p)
 }
 
-func backupExecutable(target string, mode os.FileMode) (string, error) {
+func backupExecutable(ctx context.Context, target string, mode os.FileMode) (string, error) {
 	source, err := os.Open(target)
 	if err != nil {
 		return "", err
@@ -89,14 +87,11 @@ func backupExecutable(target string, mode os.FileMode) (string, error) {
 		return "", err
 	}
 	name := backup.Name()
-	keep := false
 	defer func() {
 		backup.Close()
-		if !keep {
-			os.Remove(name)
-		}
+		os.Remove(name)
 	}()
-	if _, err = io.Copy(backup, source); err != nil {
+	if _, err = io.Copy(backup, &contextReader{ctx: ctx, reader: source}); err != nil {
 		return "", err
 	}
 	if err = backup.Chmod(mode); err != nil {
@@ -108,6 +103,13 @@ func backupExecutable(target string, mode os.FileMode) (string, error) {
 	if err = backup.Close(); err != nil {
 		return "", err
 	}
-	keep = true
-	return name, nil
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
+	// Publish only a complete copy, preserving the previous backup on failure.
+	path := filepath.Join(filepath.Dir(target), ".microsctl-backup")
+	if err = os.Rename(name, path); err != nil {
+		return "", fmt.Errorf("publish executable backup: %w", err)
+	}
+	return path, nil
 }
