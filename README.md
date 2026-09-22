@@ -1,8 +1,8 @@
-# microsctl
+# ![logo](./media/logo_mini.png) microsctl
 
 Discover [micrOS](https://github.com/BxNxM/micrOS) nodes, run commands, and install
 or update ESP boards over USB from one terminal app. Firmware and resources are
-bundled; no Python setup is needed.
+bundled and self contained.
 
 ![ESP32 verified target](https://img.shields.io/badge/ESP32-verified-brightgreen)
 ![ESP32-C6 verified target](https://img.shields.io/badge/ESP32--C6-verified-brightgreen)
