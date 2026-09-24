@@ -76,6 +76,12 @@ Start Update with MicroPython running normally. For Install on some native-USB
 boards, hold **BOOT** while connecting to enter programming mode. After flashing,
 release BOOT and reconnect normally when prompted. Keep USB connected otherwise.
 
+After a successful Install:
+
+1. Connect to the **node01** Wi-Fi network (default password: `ADmin123`).
+2. Press **Esc** to return to Nodes.
+3. Open the **AP mode** device and configure it.
+
 At **Reconnect to MicroPython REPL**, the app waits for the board and resumes
 without reflashing; **Ctrl+C** cancels and exits. Reconnect to the same physical
 USB socket on macOS. On other systems, use the original port unless the board

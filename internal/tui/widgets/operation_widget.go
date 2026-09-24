@@ -53,12 +53,25 @@ func (m State) OperationWidget(width int) string {
 		b.WriteString("\n" + lipgloss.NewStyle().Foreground(ColorError).
 			Width(max(1, width-StylePanel.GetHorizontalFrameSize())).Render("Error: "+errorText) + "\n")
 	}
-	hint := "Do not disconnect the USB device during this operation."
-	if canReconnect {
-		hint = "USB reconnect · unplug/replug is safe · use the same USB socket · Ctrl+C cancels"
-	} else if m.OperationError != "" {
+	hint := ""
+	hintPrefix := "\n"
+	hintStyle := StyleMuted
+	switch {
+	case m.OperationError != "":
 		hint = "Review the error above before retrying."
+	case m.Running && canReconnect:
+		hint = "USB reconnect · unplug/replug is safe · use the same USB socket · Ctrl+C cancels"
+	case m.Running:
+		hint = "Do not disconnect the USB device during this operation."
+	case m.Result != nil && m.Operation == "install":
+		hint = "1. Connect to the node01 Wi-Fi network (default password: ADmin123)\n" +
+			"2. Press Esc to return to Nodes\n" +
+			"3. Open the AP mode device and configure it."
+		hintPrefix = ""
+		hintStyle = lipgloss.NewStyle().Foreground(ColorRelease).PaddingLeft(2)
 	}
-	b.WriteString("\n" + StyleMuted.Render(hint))
+	if hint != "" {
+		b.WriteString(hintPrefix + hintStyle.Width(max(1, width-StylePanel.GetHorizontalFrameSize())).Render(hint))
+	}
 	return StylePanel.Width(width).Render(strings.TrimSuffix(b.String(), "\n"))
 }
