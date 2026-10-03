@@ -20,8 +20,6 @@ func openBrowserCmd(url string) tea.Cmd {
 		switch runtime.GOOS {
 		case "darwin":
 			cmd = exec.CommandContext(ctx, "open", url)
-		case "windows":
-			cmd = exec.CommandContext(ctx, "rundll32", "url.dll,FileProtocolHandler", url)
 		case "linux":
 			cmd = exec.CommandContext(ctx, "xdg-open", url)
 		default:

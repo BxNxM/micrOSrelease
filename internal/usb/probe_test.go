@@ -16,10 +16,10 @@ func TestProbeResetStrategyMatchesUSBTransport(t *testing.T) {
 		device Device
 		reset  espflasher.ResetMode
 	}{
-		{"CP210x metadata", Device{Port: "COM7", USBVID: "10c4"}, espflasher.ResetDefault},
-		{"WCH metadata", Device{Port: "COM8", USBVID: "1a86"}, espflasher.ResetDefault},
-		{"FTDI metadata", Device{Port: "COM9", USBVID: "0403"}, espflasher.ResetDefault},
-		{"Prolific metadata", Device{Port: "COM10", USBVID: "067B"}, espflasher.ResetDefault},
+		{"CP210x metadata", Device{Port: "/dev/serial/by-id/usb-test7", USBVID: "10c4"}, espflasher.ResetDefault},
+		{"WCH metadata", Device{Port: "/dev/serial/by-id/usb-test8", USBVID: "1a86"}, espflasher.ResetDefault},
+		{"FTDI metadata", Device{Port: "/dev/serial/by-id/usb-test9", USBVID: "0403"}, espflasher.ResetDefault},
+		{"Prolific metadata", Device{Port: "/dev/serial/by-id/usb-test10", USBVID: "067B"}, espflasher.ResetDefault},
 		{"Silabs macOS", Device{Port: "/dev/cu.SLAB_USBtoUART"}, espflasher.ResetDefault},
 		{"Apple macOS", Device{Port: "/dev/cu.usbserial-0001"}, espflasher.ResetDefault},
 		{"WCH macOS", Device{Port: "/dev/cu.wchusbserial1"}, espflasher.ResetDefault},
@@ -27,7 +27,7 @@ func TestProbeResetStrategyMatchesUSBTransport(t *testing.T) {
 		{"native C6", Device{Port: "/dev/cu.usbmodem2101", USBVID: "303a"}, espflasher.ResetAuto},
 		{"native USB overrides name", Device{Port: "/dev/ttyUSB0", USBVID: "303A"}, espflasher.ResetAuto},
 		{"unknown modem", Device{Port: "/dev/cu.usbmodem2101"}, espflasher.ResetAuto},
-		{"unknown Windows", Device{Port: "COM7"}, espflasher.ResetAuto},
+		{"unknown serial path", Device{Port: "/dev/serial/by-id/usb-test7"}, espflasher.ResetAuto},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			options := probeOptions(tc.device)
@@ -95,7 +95,7 @@ func TestProbeReadsESPDeviceInformation(t *testing.T) {
 func TestProbeKeepsPartialInformation(t *testing.T) {
 	probe := &fakeDeviceProbe{chip: "ESP32-C3", flashErr: errors.New("unsupported")}
 	manager := ReleaseManager{OpenProbe: func(string) (deviceProbe, error) { return probe, nil }}
-	device, err := manager.Probe(context.Background(), Device{Port: "COM7"})
+	device, err := manager.Probe(context.Background(), Device{Port: "/dev/serial/by-id/usb-test7"})
 	if err != nil {
 		t.Fatal(err)
 	}

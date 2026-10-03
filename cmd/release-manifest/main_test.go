@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	selfupdate "github.com/micros/microsctl/internal/network/self_update"
@@ -36,13 +37,18 @@ func TestManifestMatchesMetadata(t *testing.T) {
 	}
 }
 
-func TestManifestPreservesVersionWithoutInspectingBinaries(t *testing.T) {
+func TestManifestPreservesConfiguredReleaseWithoutInspectingBinaries(t *testing.T) {
 	root := t.TempDir()
 	output := filepath.Join(root, "MANIFEST.yaml")
 	if err := os.WriteFile(output, []byte(`schema: 1
 microsctl:
   version: 9.8.7
   url: https://downloads.example.com/custom-branch/
+  binaries:
+    linux-arm64:
+      path: downloads/linux/arm64/microsctl
+    darwin-amd64:
+      path: custom/microsctl-intel-mac
 `), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -61,8 +67,15 @@ microsctl:
 	}
 	data, _ := os.ReadFile(output)
 	manifest, err := selfupdate.ParseReleaseManifest(data)
-	if err != nil || manifest.Microsctl.Version != "9.8.7" || manifest.MicrOS.Version != "3.6.3-0" || len(manifest.Microsctl.Binaries) != 4 {
+	if err != nil || manifest.Microsctl.Version != "9.8.7" || manifest.MicrOS.Version != "3.6.3-0" {
 		t.Fatalf("manifest=%+v err=%v", manifest, err)
+	}
+	wantBinaries := map[string]selfupdate.ReleaseAsset{
+		"linux-arm64":  {Path: "downloads/linux/arm64/microsctl"},
+		"darwin-amd64": {Path: "custom/microsctl-intel-mac"},
+	}
+	if !reflect.DeepEqual(manifest.Microsctl.Binaries, wantBinaries) {
+		t.Fatalf("generation changed configured binaries: got %v, want %v", manifest.Microsctl.Binaries, wantBinaries)
 	}
 	if manifest.Microsctl.URL != "https://downloads.example.com/custom-branch/" {
 		t.Fatal("generation overwrote configured release URLs")

@@ -20,6 +20,7 @@ EOF
 cat > "$temporary/bin/curl" <<'EOF'
 #!/bin/sh
 set -eu
+touch "$TEST_DOWNLOAD_MARKER"
 [ "$1" = -fL ] && [ "$2" = --retry ] && [ "$3" = 3 ] && [ "$4" = --output ]
 [ "$6" = "https://raw.githubusercontent.com/test/repository/test-ref/dist/$TEST_ASSET" ]
 printf 'test binary\n' > "$5"
@@ -28,6 +29,7 @@ EOF
 chmod +x "$temporary/bin/uname" "$temporary/bin/curl"
 export PATH="$temporary/bin:$PATH"
 export MICROSCTL_REPOSITORY=test/repository MICROSCTL_REF=test-ref
+export TEST_DOWNLOAD_MARKER="$temporary/downloaded"
 cd "$temporary/output"
 
 while read -r TEST_OS TEST_ARCH TEST_ASSET output; do
@@ -42,8 +44,19 @@ Linux arm64 microsctl-linux-arm64 microsctl
 Linux x86_64 microsctl-linux-amd64 microsctl
 Linux amd64 microsctl-linux-amd64 microsctl
 Darwin arm64 microsctl-darwin-arm64 microsctl
-MINGW64_NT x86_64 microsctl-windows-amd64.exe microsctl.exe
 EOF
+
+rm "$TEST_DOWNLOAD_MARKER"
+for TEST_OS in MINGW64_NT MSYS_NT CYGWIN_NT; do
+    export TEST_OS TEST_ARCH=x86_64
+    if sh "$installer" > "$temporary/log" 2>&1; then
+        echo "Expected $TEST_OS to be rejected."
+        exit 1
+    fi
+    [ "$(cat "$temporary/log")" = 'Native Windows is not supported. Run this installer inside WSL (Linux).' ]
+    [ ! -e "$TEST_DOWNLOAD_MARKER" ]
+    [ ! -e microsctl ] && [ ! -e microsctl.exe ]
+done
 
 export TEST_OS=Linux TEST_ARCH=armv7l
 if sh "$installer" > "$temporary/log" 2>&1; then

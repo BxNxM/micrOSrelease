@@ -36,8 +36,8 @@ func flasherOptions(device Device, config InstallConfig) (*espflasher.FlasherOpt
 		options.ResetMode = espflasher.ResetNoReset
 	case "auto":
 		options.ResetMode = automaticResetMode(device)
-		// These chips always use a UART bridge, including Windows COM ports
-		// where the name alone cannot identify the transport.
+		// These chips always use a UART bridge, even when the port name
+		// alone cannot identify the transport.
 		if chip := normalizeChip(config.Chip); chip == "esp32" || chip == "esp8266" {
 			options.ResetMode = espflasher.ResetDefault
 		}

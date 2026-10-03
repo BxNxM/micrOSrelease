@@ -30,35 +30,7 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 		return m.firmwareKey(key)
 	}
 	if m.showNodes {
-		if m.showNodeDetails {
-			return m.deviceDetailsKey(key)
-		}
-		switch key {
-		case "u":
-			return m.requestAppUpdate()
-		case "enter", "space":
-			if m.nodeIndex == 0 {
-				m.showNodes = false
-				m.cursor = int(actionDiscovery)
-				m.switchBoard(0)
-			} else if m.nodeIndex <= len(m.nodes) {
-				m.showNodeDetails = true
-				m.detailAction = 0
-				if m.nodes[m.nodeIndex-1].WebUIURL() == "" {
-					m.detailAction = 1
-				}
-			}
-		case "q":
-			if m.operationCancel != nil {
-				m.operationCancel()
-			}
-			return m, tea.Quit
-		case "down", "j", "up", "k", "left", "h", "right", "l":
-			m.moveNode(key)
-		case "r":
-			return m.refreshNodes()
-		}
-		return m, nil
+		return m.nodesKey(key)
 	}
 	if !m.confirming && (key == "esc" || key == "backspace") {
 		refresh := (m.operation == operationInstall || m.operation == operationUpdate) &&

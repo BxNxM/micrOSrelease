@@ -22,9 +22,14 @@ curl -fsSL https://raw.githubusercontent.com/BxNxM/micrOSrelease/main/dist/insta
 ./microsctl
 ```
 
-Supports macOS ARM64, Linux x64/ARM64 (including 64-bit Raspberry Pi OS), and
-Windows x64. On Windows, run the installer in Git Bash, MSYS2, or Cygwin, then
-start `./microsctl.exe`.
+Prebuilt releases are available for macOS ARM64 and Linux x64/ARM64 (including
+64-bit Raspberry Pi OS). Intel Macs require [manual builds](#build-from-source),
+with updates built manually as well.
+
+On Windows, use [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install)
+and run the installer above inside your Linux terminal. Native Windows builds
+are not supported. For USB tools, first
+[attach the board to WSL](https://learn.microsoft.com/en-us/windows/wsl/connect-usb).
 
 ## Update microsctl
 
@@ -119,4 +124,12 @@ go build -o microsctl .
 ./microsctl
 ```
 
-On Windows, build with `go build -o microsctl.exe .` and run `./microsctl.exe`.
+The Go build command above also works on Intel Macs and inside WSL.
+
+With Make installed, an optional Intel Mac cross-build is available:
+
+```sh
+make macos-amd64    # dist/microsctl-darwin-amd64 (Intel Mac)
+```
+
+This target is excluded from the default `make build` and release manifest.

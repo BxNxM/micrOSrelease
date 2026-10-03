@@ -97,8 +97,11 @@ func (s *SelfUpdater) Check(ctx context.Context) (UpdateOffer, error) {
 	}
 	platform := s.platform()
 	asset, ok := manifest.Microsctl.Binaries[platform]
-	if !ok || asset.Path != "dist/"+BinaryName(platform) {
+	if !ok {
 		return UpdateOffer{}, fmt.Errorf("self-update unavailable for %s", platform)
+	}
+	if err := validateReleasePath(asset.Path); err != nil {
+		return UpdateOffer{}, err
 	}
 	return UpdateOffer{Version: manifest.Microsctl.Version, MicrOSVersion: manifest.MicrOS.Version, Platform: platform, URL: manifest.Microsctl.URL, Asset: asset, Available: comparison != 0}, nil
 }
@@ -107,7 +110,7 @@ func (s *SelfUpdater) Install(ctx context.Context, offer UpdateOffer, emit func(
 	// Availability controls automatic offers; an explicit install may reinstall
 	// the current version using the same validated platform and download path.
 	_, err := CompareReleaseVersions(offer.Version, s.CurrentVersion)
-	if err != nil || offer.Platform != s.platform() || offer.Asset.Path != "dist/"+BinaryName(s.platform()) {
+	if err != nil || offer.Platform != s.platform() || validateReleasePath(offer.Asset.Path) != nil {
 		return "", fmt.Errorf("invalid update offer")
 	}
 	if s.Installer == nil {

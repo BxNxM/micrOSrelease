@@ -1,7 +1,6 @@
 package usb
 
 import (
-	"regexp"
 	"sort"
 	"strings"
 )
@@ -15,11 +14,6 @@ var unixDeviceIdentifiers = []string{
 	"ttyACM",
 	"ttyUSB",
 }
-
-// PnP IDs cover native Espressif USB even with localized/generic CDC names.
-var windowsDeviceIdentifiers = []string{"CP210", "CH340", "CH343", "CH9102", "USB JTAG/serial", `VID_303A&`}
-
-var windowsCOMPort = regexp.MustCompile(`(?i)\((COM[0-9]+)\)`)
 
 func matchingUnixDevices(names []string, deviceDirectory string) []Device {
 	// macOS publishes tty.* and cu.* for the same endpoint. Prefer the
@@ -39,27 +33,6 @@ func matchingUnixDevices(names []string, deviceDirectory string) []Device {
 			continue
 		}
 		devices = append(devices, Device{Port: joinDevicePath(deviceDirectory, name)})
-	}
-	sort.Slice(devices, func(i, j int) bool { return devices[i].Port < devices[j].Port })
-	return devices
-}
-
-func matchingWindowsDevices(descriptions []string) []Device {
-	seen := make(map[string]bool)
-	var devices []Device
-	for _, description := range descriptions {
-		if !containsIdentifier(description, windowsDeviceIdentifiers) {
-			continue
-		}
-		match := windowsCOMPort.FindStringSubmatch(description)
-		if len(match) != 2 {
-			continue
-		}
-		port := strings.ToUpper(match[1])
-		if !seen[port] {
-			seen[port] = true
-			devices = append(devices, Device{Port: port})
-		}
 	}
 	sort.Slice(devices, func(i, j int) bool { return devices[i].Port < devices[j].Port })
 	return devices

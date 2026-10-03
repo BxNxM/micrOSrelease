@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 
 const MaxReleaseSize int64 = 128 << 20
 
-var ReleasePlatforms = []string{"darwin-arm64", "linux-amd64", "linux-arm64", "windows-amd64"}
 var releaseVersion = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+$`)
 
 type ReleaseAsset struct {
@@ -41,12 +41,14 @@ type ReleaseManifest struct {
 	} `yaml:"micros"`
 }
 
-func BinaryName(platform string) string {
-	name := "microsctl-" + platform
-	if strings.HasPrefix(platform, "windows-") {
-		name += ".exe"
+// Asset paths are unescaped relative URL paths beneath the release URL.
+func validateReleasePath(value string) error {
+	u, err := url.Parse(value)
+	if err != nil || u.IsAbs() || u.Host != "" || u.Path != value ||
+		!fs.ValidPath(value) || value == "." || strings.Contains(value, `\`) {
+		return fmt.Errorf("invalid release asset path %q", value)
 	}
-	return name
+	return nil
 }
 
 func ParseReleaseManifest(data []byte) (ReleaseManifest, error) {

@@ -34,6 +34,12 @@ context cancellation. `*_navigation.go` owns screen-specific keys and transition
 `view.go` builds `widgets.State` and routes to views. Views and widgets treat this
 snapshot as read-only and receive no services.
 
+Nodes navigation lives in `nodes_navigation.go`; `nodes_state.go` merges discovery
+observations and orders the grid while preserving selection by device identity.
+USB Tools comes first, then reachable localhost/AP endpoints, online release
+nodes, other online nodes, and offline nodes. Each ordinary device group sorts
+by name without case sensitivity, with device identity breaking ties.
+
 Shell uses the optional `network.ShellConnector` interface and a persistent TCP
 client. `client.go` handles prompt framing and cumulative response snapshots;
 `shell.go` adds interactive authentication and UID verification. Discovery uses
@@ -63,10 +69,15 @@ alone. Cache writes use a temporary file, sync, and rename.
 
 `MANIFEST.yaml` is the single source of the microsctl version and is embedded
 by `go build`. `--version` prints it without starting services.
-`make build` refreshes manifest platform paths and the latest informational micrOS
-version before building all four `dist/` executables. `make manifest` refreshes
-that metadata alone, preserving the microsctl version and without inspecting
-binary contents. Change `microsctl.version` in the manifest for each release;
+`microsctl.binaries` defines the published platforms and their download paths.
+`make build` refreshes the latest informational micrOS version before building
+the macOS ARM64 and Linux x64/ARM64 `dist/` executables.
+`make macos-amd64` builds macOS Intel x64 separately; this manual build is
+excluded from the release manifest. Native Windows is unsupported; use Linux
+under WSL instead.
+`make manifest` refreshes that firmware metadata alone, preserving the microsctl
+version, URL, and configured binaries without inspecting binary contents.
+Change `microsctl.version` in the manifest for each release;
 publish the manifest and matching `dist/` binaries together.
 
 `microsctl.url` in `MANIFEST.yaml` is the sole release URL, including the branch
@@ -74,13 +85,15 @@ and trailing `/` (for example, `https://raw.githubusercontent.com/BxNxM/micrOSre
 The build embeds it and `make manifest` preserves manual edits. Startup fetches
 `<url>MANIFEST.yaml` with a 10-second timeout. The fetched manifest's `url` is
 used with the selected binary's `path`, so newer manifests can move downloads
-to another repository, branch, or host. Requests use the latest branch contents;
+to another repository, branch, or host. Asset paths may use custom filenames and
+subdirectories; they must be unescaped relative URL paths without traversal,
+queries, fragments, or backslashes. Requests use the latest branch contents;
 there is no commit lookup or pinning. Editing the local manifest takes effect
 in the next build.
 
-Any different version is offered, including
-a lower version. `u` installs the exact OS/architecture artifact from `dist/`;
-unsupported platforms never fall back to another binary. Downloads have a
+Any different version is offered, including a lower version. `u` installs the
+exact OS/architecture artifact selected by the manifest; unsupported platforms
+never fall back to another binary. Downloads have a
 five-minute timeout and 128 MiB limit; the manifest is limited to 1 MiB.
 An up-to-date check leaves only the current application and firmware versions
 in the banner. Update mode appends `Update available <remote-version> (Press u to update)`.
@@ -96,14 +109,12 @@ is disabled during installation; all USB guards and restart behavior still apply
 finishes the bounded download, syncs the file, and retains a
 `.microsctl-backup` copy before replacement. Each update stages and syncs the
 backup before replacing that fixed file, retaining only the immediately previous
-executable. Unix replaces by rename; Windows
-moves the running image aside and restores it if the replacement rename fails.
-Windows may retain `.microsctl-backup.running.exe` until the old process exits;
-the next update reuses that path. TUI update
-commands stream progress, block navigation/USB work, and wait for cancellation
+executable. Replacement uses an atomic rename, leaving the current executable
+intact if the rename fails. TUI update commands stream progress, block
+navigation/USB work, and wait for cancellation
 before quitting. Successful installation exits Bubble Tea, then restarts with
-the original arguments, environment, and working directory. Restart uses `exec`
-on Unix and a child process on Windows. A failed restart prints the path to run.
+the original arguments, environment, and working directory. Restart uses `exec`.
+A failed restart prints the path to run.
 
 ## USB lifecycle and preservation
 
@@ -132,8 +143,7 @@ resets. Otherwise it requires a host backup directory and archives the entire
 filesystem, including hidden files and empty directories, before erase. Downloads
 are SHA-256 verified; unreadable files, changed sizes, or limits of 1 MiB/file and
 64 MiB total abort the backup. Archives are privately created and synced, then
-published durably: Unix syncs the renamed entry and ancestor directories; Windows
-uses a write-through move.
+published durably by syncing the renamed entry and ancestor directories.
 Unavailable runtime access aborts before flashing. Bootloader connection failure
 after backup aborts before erase, retains the archive path, and never retries as
 a clean install. This safety policy is shared by every board type.
@@ -181,7 +191,8 @@ See [board configuration](storage/frameworks/README.md) and
 
 ```sh
 make mr MICROS_SOURCE=/path/to/micrOS  # Or: make micros-refresh
-make build                           # macOS ARM64, Linux x64/ARM64, Windows x64
+make build                           # macOS ARM64, Linux x64/ARM64
+make macos-amd64                     # macOS Intel x64
 make linux-arm64                     # 64-bit Raspberry Pi OS and other ARM64 Linux
 ```
 

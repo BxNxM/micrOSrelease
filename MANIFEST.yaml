@@ -1,6 +1,6 @@
 schema: 1
 microsctl:
-    version: 1.0.4
+    version: 1.1.0
     url: https://raw.githubusercontent.com/BxNxM/micrOSrelease/main/
     binaries:
         darwin-arm64:
@@ -9,7 +9,5 @@ microsctl:
             path: dist/microsctl-linux-amd64
         linux-arm64:
             path: dist/microsctl-linux-arm64
-        windows-amd64:
-            path: dist/microsctl-windows-amd64.exe
 micros:
     version: 3.6.4-0

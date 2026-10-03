@@ -23,11 +23,8 @@ case "$os" in
 		esac
 		;;
 	MINGW*|MSYS*|CYGWIN*)
-		case "$arch" in
-			x86_64|amd64) asset="microsctl-windows-amd64.exe" ;;
-			*) echo "Unsupported Windows architecture: $arch" >&2; exit 1 ;;
-		esac
-		output="microsctl.exe"
+		echo "Native Windows is not supported. Run this installer inside WSL (Linux)." >&2
+		exit 1
 		;;
 	*)
 		echo "Unsupported operating system: $os" >&2

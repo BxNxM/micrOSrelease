@@ -12,10 +12,10 @@ func TestInstallFlasherSelectsResetForTransport(t *testing.T) {
 		want                    espflasher.ResetMode
 	}{
 		{"ESP32 CP2102", "/dev/cu.SLAB_USBtoUART", "esp32", "auto", espflasher.ResetDefault},
-		{"ESP32 Windows", "COM7", "esp32", "auto", espflasher.ResetDefault},
-		{"ESP8266 Windows", "COM7", "esp8266", "auto", espflasher.ResetDefault},
+		{"ESP32 generic port", "/dev/serial/by-id/usb-test7", "esp32", "auto", espflasher.ResetDefault},
+		{"ESP8266 generic port", "/dev/serial/by-id/usb-test7", "esp8266", "auto", espflasher.ResetDefault},
 		{"C6 native USB", "/dev/cu.usbmodem2101", "esp32c6", "auto", espflasher.ResetAuto},
-		{"C6 Windows USB", "COM7", "esp32c6", "auto", espflasher.ResetAuto},
+		{"C6 generic port", "/dev/serial/by-id/usb-test7", "esp32c6", "auto", espflasher.ResetAuto},
 		{"C6 UART bridge", "/dev/ttyUSB0", "esp32c6", "auto", espflasher.ResetDefault},
 		{"explicit no reset", "/dev/cu.SLAB_USBtoUART", "esp32", "no-reset", espflasher.ResetNoReset},
 		{"explicit JTAG", "/dev/ttyUSB0", "esp32c6", "usb-jtag", espflasher.ResetUSBJTAG},
@@ -36,7 +36,7 @@ func TestInstallFlasherSelectsResetForTransport(t *testing.T) {
 func TestFlashAndProbeUseSameUSBTransport(t *testing.T) {
 	for _, chip := range []string{"esp32c3", "esp32c6", "esp32s3"} {
 		for _, vid := range []string{"10C4", "1A86", "0403", "067B", "303A"} {
-			device := Device{Port: "COM7", USBVID: vid}
+			device := Device{Port: "/dev/serial/by-id/usb-test7", USBVID: vid}
 			opts, err := flasherOptions(device, InstallConfig{Chip: chip, ResetMode: "auto"})
 			if err != nil {
 				t.Fatal(err)

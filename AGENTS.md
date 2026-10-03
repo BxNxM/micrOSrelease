@@ -11,6 +11,7 @@ details in ARCHITECTURE and coding-agent constraints here.
 - Keep `main.go` as the composition root and feature logic in `internal/usb`,
   `internal/micropython`, `internal/network`, or `internal/storage`.
 - Preserve native Go workflows and the single executable with embedded assets.
+  Support macOS and Linux; direct Windows users to WSL, not native Windows builds.
 - Keep TUI state/events/commands in `internal/tui`; put screen keys in
   `*_navigation.go`, screen composition in `views/*_view.go`, and reusable
   rendering in `widgets/*_widget.go`. Keep `view.go` limited to snapshot/routing.
@@ -61,6 +62,10 @@ details in ARCHITECTURE and coding-agent constraints here.
   manifest. Keep the base version banner visible when update mode is off.
 - Root `MANIFEST.yaml` is the sole application version source. Bump its
   microsctl version for releases; publish it with matching `dist/` builds.
+  Its `microsctl.binaries` section defines published platforms and paths; manifest
+  generation must preserve these entries rather than use a hardcoded platform list.
+  Honor the selected asset path after validating it as an unescaped relative URL
+  path without traversal; never fall back to another platform.
 - Keep the release URL (including branch) in `microsctl.url` in `MANIFEST.yaml`
   and preserve it during generation. Use the fetched manifest's URL for downloads;
   fetch latest branch contents without commit lookup or pinning.

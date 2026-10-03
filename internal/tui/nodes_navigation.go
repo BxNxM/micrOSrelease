@@ -2,6 +2,38 @@ package tui
 
 import tea "charm.land/bubbletea/v2"
 
+func (m model) nodesKey(key string) (tea.Model, tea.Cmd) {
+	if m.showNodeDetails {
+		return m.deviceDetailsKey(key)
+	}
+	switch key {
+	case "u":
+		return m.requestAppUpdate()
+	case "enter", "space":
+		if m.nodeIndex == 0 {
+			m.showNodes = false
+			m.cursor = int(actionDiscovery)
+			m.switchBoard(0)
+		} else if m.nodeIndex <= len(m.nodes) {
+			m.showNodeDetails = true
+			m.detailAction = 0
+			if m.nodes[m.nodeIndex-1].WebUIURL() == "" {
+				m.detailAction = 1
+			}
+		}
+	case "q":
+		if m.operationCancel != nil {
+			m.operationCancel()
+		}
+		return m, tea.Quit
+	case "down", "j", "up", "k", "left", "h", "right", "l":
+		m.moveNode(key)
+	case "r":
+		return m.refreshNodes()
+	}
+	return m, nil
+}
+
 // refreshNodes shares the manual refresh guards with post-USB navigation.
 func (m model) refreshNodes() (tea.Model, tea.Cmd) {
 	if m.discovering || m.removingUID != "" {

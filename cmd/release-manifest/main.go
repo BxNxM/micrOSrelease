@@ -31,11 +31,6 @@ func generate(root, output string) error {
 	if err != nil {
 		return err
 	}
-	manifest.Microsctl.Binaries = map[string]selfupdate.ReleaseAsset{}
-	for _, platform := range selfupdate.ReleasePlatforms {
-		manifest.Microsctl.Binaries[platform] = selfupdate.ReleaseAsset{Path: "dist/" + selfupdate.BinaryName(platform)}
-	}
-
 	images, err := usb.Images(os.DirFS(filepath.Join(root, "storage")))
 	if err != nil {
 		return err

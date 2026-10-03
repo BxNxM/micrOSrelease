@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -36,11 +35,9 @@ func TestExecutableInstallKeepsBackup(t *testing.T) {
 	if err != nil || !bytes.Equal(installed, binary) {
 		t.Fatal("replacement differs", err)
 	}
-	if runtime.GOOS != "windows" {
-		info, _ := os.Stat(target)
-		if info.Mode().Perm()&0111 == 0 {
-			t.Fatal("lost executable permission")
-		}
+	info, _ := os.Stat(target)
+	if info.Mode().Perm()&0111 == 0 {
+		t.Fatal("lost executable permission")
 	}
 	files, _ := filepath.Glob(filepath.Join(filepath.Dir(target), ".microsctl-update-*"))
 	if len(files) != 0 {
@@ -58,12 +55,6 @@ func TestRepeatedUpdatesKeepOnlyPreviousExecutable(t *testing.T) {
 		t.Fatal(err)
 	}
 	for version := 2; version <= 4; version++ {
-		if runtime.GOOS == "windows" {
-			// Simulate an image left behind by an exited Windows process.
-			if err := os.WriteFile(filepath.Join(directory, ".microsctl-backup.running.exe"), []byte("old image"), 0755); err != nil {
-				t.Fatal(err)
-			}
-		}
 		payload := fmt.Sprintf("version %d", version)
 		backup, err := (ExecutableInstaller{Path: target}).Install(context.Background(), strings.NewReader(payload))
 		if err != nil {
@@ -182,7 +173,7 @@ func TestRestartPreservesArgumentsDirectoryAndEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fixture := filepath.Join(directory, "microsctl-fixture.exe")
+	fixture := filepath.Join(directory, "microsctl-fixture")
 	if err = os.WriteFile(fixture, binary, 0755); err != nil {
 		t.Fatal(err)
 	}
