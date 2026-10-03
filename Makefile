@@ -8,11 +8,15 @@ LINUX_AMD64_BINARY := $(DIST_DIR)/$(APP_NAME)-linux-amd64
 LINUX_ARM64_BINARY := $(DIST_DIR)/$(APP_NAME)-linux-arm64
 WINDOWS_AMD64_BINARY := $(DIST_DIR)/$(APP_NAME)-windows-amd64.exe
 
-.PHONY: all build macos-arm64 linux-amd64 linux-arm64 windows-amd64 mr micros-refresh manifest clean help
+.PHONY: all build macos-arm64 linux-amd64 linux-arm64 windows-amd64 mr micros-refresh manifest ut clean help
 
 all: build
 
 build: macos-arm64 linux-amd64 linux-arm64 windows-amd64
+
+ut:
+	$(GO) test -count=1 -skip '^TestHardware' ./...
+	sh scripts/install-test.sh
 
 manifest:
 	$(GO) run ./cmd/release-manifest
@@ -51,5 +55,6 @@ help:
 	@echo "  make windows-amd64        Build Windows x64 binary"
 	@echo ""
 	@echo "  make manifest             Refresh MANIFEST.yaml versions and platform paths"
+	@echo "  make ut                   Run all unit tests (no live hardware)"
 	@echo "  make clean                Remove built binaries from $(DIST_DIR)"
 	@echo "  make help                 Show this help"

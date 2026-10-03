@@ -196,10 +196,12 @@ adjacent `precompiled/modules/`. It preserves older destination files and
 ## Validation
 
 ```sh
-sh scripts/install-test.sh
-go test ./...
+make ut
 go vet ./...
 ```
+
+`make ut` runs fresh Go tests across all packages and the installer shell tests.
+It explicitly skips `TestHardware*` tests, even if hardware-test variables are set.
 
 With hardware-test variables unset, tests use fakes/local fixtures and do not
 open serial ports. Live tests reset or update the selected board; use only an
