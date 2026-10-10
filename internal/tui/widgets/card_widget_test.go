@@ -1,10 +1,26 @@
 package widgets
 
 import (
+	"strings"
 	"testing"
 
 	"charm.land/lipgloss/v2"
 )
+
+func TestCardTitleLockAlignment(t *testing.T) {
+	for _, width := range []int{20, 37, 38} {
+		for _, title := range []string{"node", StyleTitle.Render("Localhost · __simulator__ · 3.6.0")} {
+			line := CardTitleWidget(width, title, "🔒")
+			if lipgloss.Width(line) != width-4 || !strings.HasSuffix(line, "🔒") {
+				t.Fatalf("lock alignment at width %d: %q", width, line)
+			}
+			card := CardWidget(width, 4, ColorBorder, line)
+			if w, h := lipgloss.Size(card); w != width || h != 6 {
+				t.Fatalf("card size = %dx%d", w, h)
+			}
+		}
+	}
+}
 
 func TestCardDimensionsWithLongSpecialTitle(t *testing.T) {
 	for _, width := range []int{20, 37, 38} {

@@ -17,7 +17,14 @@ func NodesView(m widgets.State) tea.View {
 	for _, line := range m.UpdateBannerLines(width) {
 		b.WriteString(line + "\n")
 	}
-	b.WriteString(widgets.StyleMuted.Render("TCP 9008 · auto-refresh 5 min") + "\n\n")
+	subtitle := "TCP 9008 · auto-refresh 5 min"
+	if m.NodeFilterEditing || m.NodeFilter != "" {
+		subtitle = "Filter: " + widgets.Clean(m.NodeFilter)
+		if m.NodeFilterEditing {
+			subtitle += "▏ · Arrows select · Enter open · Esc clear"
+		}
+	}
+	b.WriteString(ansi.Truncate(widgets.StyleMuted.Render(subtitle), width, "…") + "\n\n")
 	updated := "n/a"
 	if !m.LastUpdated.IsZero() {
 		updated = m.LastUpdated.Local().Format("2006-01-02 15:04:05")
@@ -29,7 +36,11 @@ func NodesView(m widgets.State) tea.View {
 	b.WriteString(ansi.Truncate(activity, width, "…") + "\n")
 	if len(m.Nodes) == 0 {
 		if !m.Discovering {
-			b.WriteString("No nodes found. Press r to scan.")
+			if m.NodeFilter != "" {
+				b.WriteString("No matching devices.")
+			} else {
+				b.WriteString("No nodes found. Press r to scan.")
+			}
 		}
 		b.WriteString("\n")
 	}
@@ -56,8 +67,12 @@ func NodesView(m widgets.State) tea.View {
 		if node.Cached {
 			latency += " · saved"
 		}
+		indicator := ""
+		if node.Features["auth"] == "ON" {
+			indicator = "🔒"
+		}
 		lines := []string{
-			lipgloss.NewStyle().Bold(true).Foreground(nameColor).Render(widgets.NodeTitle(node)) + " · " + widgets.Clean(node.Version),
+			widgets.CardTitleWidget(cardWidth, lipgloss.NewStyle().Bold(true).Foreground(nameColor).Render(widgets.NodeTitle(node))+" · "+widgets.Clean(node.Version), indicator),
 			fmt.Sprintf("%s · %s", widgets.ModeWidget(node.Mode), latency),
 		}
 		switch node.SpecialEndpoint() {
@@ -90,7 +105,7 @@ func NodesView(m widgets.State) tea.View {
 		}
 	}
 	b.WriteString("\n" + ansi.Truncate(widgets.Clean(m.Status), width, "…"))
-	b.WriteString(fmt.Sprintf("\n↑↓←→ select · enter open · page %d/%d · r scan · q quit", page+1, pages))
+	b.WriteString(fmt.Sprintf("\n↑↓←→ select · enter open · page %d/%d · ctrl+f filter · r scan · q quit", page+1, pages))
 	v := tea.NewView(b.String())
 	v.AltScreen = true
 	return v

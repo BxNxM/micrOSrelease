@@ -42,7 +42,13 @@ Your current command-line settings are kept.
 
 Use the arrow keys to select a card and **Enter** for details. **r** refreshes;
 scans also run every five minutes. Saved nodes appear immediately, while
-localhost and AP mode nodes appear when reachable.
+localhost and AP mode nodes appear when reachable. **Ctrl+F** filters device names
+by substring, ignoring case. Type to filter, use the **arrow keys** to select,
+and **Enter** to open while filtering. **Esc** clears; **Ctrl+F** toggles editing.
+USB Tools stays visible.
+Password-protected nodes are discoverable through `hello`; version and other
+features require `MICROS_PASSWORD` during scans. Web UI is also checked at the
+default HTTP address when authentication hides configuration.
 
 In details, open **Web UI** (**o**), choose **Shell**, or remove the node from the
 local cache. Removing a node does not erase it; a later scan can rediscover it.

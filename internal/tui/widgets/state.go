@@ -24,6 +24,8 @@ type State struct {
 	BoardType                                      string
 	Nodes                                          []network.Device
 	NodeIndex                                      int
+	NodeFilter                                     string
+	NodeFilterEditing                              bool
 	DetailAction                                   int
 	LoadingInventory, UsbScanRequested, UsbScanned bool
 	ProbingUSB                                     bool

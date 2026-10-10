@@ -26,10 +26,6 @@ func nodeRank(node network.Device) int {
 }
 
 func (m *model) applyNetworkDevice(device network.Device) {
-	selected := ""
-	if m.nodeIndex > 0 && m.nodeIndex <= len(m.nodes) {
-		selected = m.nodes[m.nodeIndex-1].CardKey()
-	}
 	if m.nodeObservations == nil {
 		m.nodeObservations = append([]network.Device{}, m.nodes...)
 	}
@@ -49,10 +45,24 @@ func (m *model) applyNetworkDevice(device network.Device) {
 	} else {
 		m.nodeObservations[index] = device
 	}
+	m.rebuildNodes()
+}
+
+func (m *model) rebuildNodes() {
+	selected := ""
+	if m.nodeIndex > 0 && m.nodeIndex <= len(m.nodes) {
+		selected = m.nodes[m.nodeIndex-1].CardKey()
+	}
+	if m.nodeObservations == nil {
+		m.nodeObservations = append([]network.Device{}, m.nodes...)
+	}
 	m.nodes = nil
 	for _, node := range network.UniqueDevices(m.nodeObservations) {
 		if node.CardKey() == m.removedUID || node.CardKey() == m.removingUID ||
 			(node.SpecialEndpoint() != "" && (!node.Online || node.Cached)) {
+			continue
+		}
+		if !strings.Contains(strings.ToLower(node.Name), strings.ToLower(m.nodeFilter)) {
 			continue
 		}
 		m.nodes = append(m.nodes, node)

@@ -18,6 +18,8 @@ type Device struct {
 	Error     string
 	CheckedAt time.Time
 	Cached    bool `json:"-"`
+	// ProbedWebUI is a live HTTP fallback when authentication hides config.
+	ProbedWebUI string `json:"-"`
 }
 
 type DeviceStore interface {

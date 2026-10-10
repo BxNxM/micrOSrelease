@@ -27,6 +27,9 @@ func TestNodeAuthFeatures(t *testing.T) {
 					}}},
 				}
 				cards := ansi.Strip(NodesView(state).Content)
+				if strings.Contains(cards, "🔒") != (tc.value == "ON") {
+					t.Fatalf("unexpected lock for auth %q:\n%s", tc.value, cards)
+				}
 				for _, want := range []string{
 					"WEBUI: n/a · ESPNOW: n/a · AUTH: " + tc.want,
 					"CRON: ON · TIMIRQ: OFF",

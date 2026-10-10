@@ -15,7 +15,10 @@ func inspect(ctx context.Context, node Device, password string) (Device, bool) {
 	node.Features = map[string]string{}
 	node.Latency = 0
 	node.Error = ""
-	client, err := Dial(ctx, node.Address, password)
+	node.ProbedWebUI = ""
+	// Protected nodes still expose hello before login. Keep that connection
+	// unauthenticated when no discovery password was supplied.
+	client, err := dial(ctx, node.Address, password, password == "")
 	if err != nil {
 		node.Error = err.Error()
 		return node, false
@@ -41,6 +44,16 @@ func inspect(ctx context.Context, node Device, password string) (Device, bool) {
 	node.Name, node.UID, node.Online = fields[1], fields[2], true
 	if len(fields) > 3 {
 		node.Mode = fields[3]
+	}
+	if client.PasswordRequired() {
+		node.Features["auth"] = "ON"
+		node.Latency = time.Since(start)
+		client.Close()
+		if url := defaultWebUIURL(node.Address); webUIAvailable(ctx, url) {
+			node.Features["webui"] = "ON"
+			node.ProbedWebUI = url
+		}
+		return node, true
 	}
 	node.Version, err = client.Command(ctx, "version")
 	node.Latency = time.Since(start)

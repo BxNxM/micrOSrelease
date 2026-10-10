@@ -34,22 +34,24 @@ type model struct {
 	height int
 	cursor int
 
-	inventory        usb.Inventory
-	deviceIndex      int
-	imageIndex       int
-	firmwareSelected bool
-	boardType        string
-	firmwareIndex    int
-	showFirmware     bool
-	pendingOperation operation
-	nodes            []network.Device
-	nodeObservations []network.Device
-	showNodes        bool
-	showNodeDetails  bool
-	nodeIndex        int
-	detailAction     int
-	removingUID      string
-	removedUID       string
+	inventory         usb.Inventory
+	deviceIndex       int
+	imageIndex        int
+	firmwareSelected  bool
+	boardType         string
+	firmwareIndex     int
+	showFirmware      bool
+	pendingOperation  operation
+	nodes             []network.Device
+	nodeObservations  []network.Device
+	nodeFilter        string
+	nodeFilterEditing bool
+	showNodes         bool
+	showNodeDetails   bool
+	nodeIndex         int
+	detailAction      int
+	removingUID       string
+	removedUID        string
 
 	loadingInventory      bool
 	probingUSB            bool

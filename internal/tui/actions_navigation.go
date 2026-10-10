@@ -11,6 +11,9 @@ func (m model) handleKey(key string) (tea.Model, tea.Cmd) {
 	if m.appUpdate.installing {
 		return m.selfUpdateKey(key)
 	}
+	if m.showNodes && !m.showNodeDetails && m.nodeFilterEditing && !m.shell.visible && !m.showFirmware && key != "ctrl+c" {
+		return m.nodeFilterKey(key)
+	}
 	if key == "x" && m.showNodes && !m.showNodeDetails && !m.showFirmware && !m.shell.visible {
 		return m.toggleAppUpdateMode()
 	}

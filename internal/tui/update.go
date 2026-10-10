@@ -22,6 +22,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.PasteMsg:
 		if m.shell.visible {
 			m.appendShellInput(msg.Content)
+		} else if m.showNodes && !m.showNodeDetails && m.nodeFilterEditing {
+			m.appendNodeFilter(msg.Content)
 		}
 	case removeDeviceMsg:
 		m.removingUID = ""

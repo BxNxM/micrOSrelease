@@ -7,6 +7,11 @@ func (m model) nodesKey(key string) (tea.Model, tea.Cmd) {
 		return m.deviceDetailsKey(key)
 	}
 	switch key {
+	case "ctrl+f":
+		m.nodeFilterEditing = true
+	case "esc":
+		m.nodeFilter = ""
+		m.rebuildNodes()
 	case "u":
 		return m.requestAppUpdate()
 	case "enter", "space":

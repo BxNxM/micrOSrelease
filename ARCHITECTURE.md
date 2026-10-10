@@ -39,6 +39,12 @@ observations and orders the grid while preserving selection by device identity.
 USB Tools comes first, then reachable localhost/AP endpoints, online release
 nodes, other online nodes, and offline nodes. Each ordinary device group sorts
 by name without case sensitivity, with device identity breaking ties.
+Nodes supports a session-only, case-insensitive name substring filter. The model
+retains all discovery observations and rebuilds the visible list on edits and
+scan messages, preserving selection by identity. Filter input consumes shortcuts
+while editing, but arrows navigate and Enter opens the selected card without
+leaving filter editing. USB Tools remains index zero.
+Node cards reserve the right end of their title line for a lock when auth is ON.
 
 Shell uses the optional `network.ShellConnector` interface and a persistent TCP
 client. `client.go` handles prompt framing and cumulative response snapshots;
@@ -60,7 +66,14 @@ scans. Returning from a finished USB install/update triggers the manual-refresh
 path; leaving during USB work defers that refresh until completion. The same
 scan/removal guards prevent overlapping discovery. Network discovery uses 32
 workers on TCP 9008, validates `hello`, then reads
-version and feature flags. It checks configured/private IPv4 ranges, saved
+version and feature flags. Without a scan password, a `[password]` prompt
+allows hello-only discovery: identity and mode remain available, auth is ON,
+and protected version/feature commands are skipped. For these online nodes, a
+credential-free GET to the discovered host on HTTP port 80 checks Web UI availability
+with a two-second timeout, cancellation, and no redirects. HTTP 200/401/403 enables
+Web UI using the checked address; failures leave it unknown. This fallback URL is
+cleared on each inspection and excluded from the cache. It checks configured/private
+IPv4 ranges, saved
 addresses, localhost, and AP mode. Observations merge by UID; reachable special
 endpoints take precedence over LAN aliases and are never displayed from cache
 alone. Cache writes use a temporary file, sync, and rename.
